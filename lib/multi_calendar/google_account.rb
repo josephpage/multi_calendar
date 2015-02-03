@@ -130,8 +130,8 @@ module MultiCalendar
           summary: "#{result.data['summary']}",
           description: "#{result.data['description']}",
           location: "#{result.data['location']}",
-          start: result.data['start']['dateTime'] || result.data['start']['date'],
-          end: result.data['end']['dateTime'] || result.data['end']['date'],
+          start: result.data['start'],
+          end: result.data['end'],
           all_day: result.data['start']['dateTime'].nil?,
           attendees: (result.data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
       }

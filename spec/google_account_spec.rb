@@ -274,8 +274,12 @@ describe "GoogleAccount" do
                                                          :summary=>"Event",
                                                          :description=>"Notes",
                                                          :location=>"Paris",
-                                                         :start=>"2015-01-31T12:00:00Z",
-                                                         :end=>"2015-01-31T13:00:00Z",
+                                                         :start=> {
+                                                             'dateTime' => "2015-01-31T12:00:00Z"
+                                                         },
+                                                         :end=> {
+                                                             'dateTime' => "2015-01-31T13:00:00Z"
+                                                         },
                                                          :all_day=>false,
                                                          :attendees=>[
                                                              {:email=>"john@doe.com", :name=>"john Doe"},
