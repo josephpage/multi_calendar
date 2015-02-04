@@ -216,15 +216,15 @@ describe "GoogleAccount" do
                                            })).to eq([
                                                          {
                                                              "event_id"=>"eid1",
-                                                             "calendar_id"=>"cid1"
+                                                             "calId"=>"cid1"
                                                          },
                                                          {
                                                              "event_id"=>"eid2",
-                                                             "calendar_id"=>"cid2"
+                                                             "calId"=>"cid2"
                                                          },
                                                          {
                                                              "event_id"=>"eid3",
-                                                             "calendar_id"=>"cid2"
+                                                             "calId"=>"cid2"
                                                          }
                                                      ])
       end

@@ -106,7 +106,7 @@ module MultiCalendar
         if calendar_id == email
           time_zone = result.data['timeZone']
         end
-        total_result += result.data['items'].map { |item| item['calendar_id'] = calendar_id; item }
+        total_result += result.data['items'].map { |item| item['calId'] = calendar_id; item }
       end
 
       #{
