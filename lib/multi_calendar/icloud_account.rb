@@ -172,7 +172,7 @@ module MultiCalendar
     def build_event_hash_from_response ev, calPath
       attendees = ev.attendee_property.map{|att|
         {
-            displayName: att.params['NAME'] || "",
+            displayName: "#{att.params['NAME']}".gsub("\\\"", "\""),
             responseStatus: att.params['PARTSTAT'] || "Unknown",
             email: att.params['EMAIL'] || att.value.gsub("mailto:", "")
         }
@@ -188,7 +188,7 @@ module MultiCalendar
         end
         unless organizer_already_here
           attendees << {
-              displayName: ev.organizer_property.params['NAME'] || "",
+              displayName: "#{ev.organizer_property.params['NAME']}".gsub("\\\"", "\""),
               responseStatus: "Organizer",
               email: organizer_email
           }
@@ -196,12 +196,12 @@ module MultiCalendar
       end
 
       event_hash = {
-          'id' => "#{ev.uid}".force_encoding('utf-8'),
-          'summary' => "#{ev.summary}".force_encoding('utf-8'),
-          'location' => "#{ev.location}".force_encoding('utf-8'),
-          'description' => "#{ev.description}".force_encoding('utf-8'),
+          'id' => "#{ev.uid}",
+          'summary' => "#{ev.summary}".gsub("\\\"", "\""),
+          'location' => "#{ev.location}".gsub("\\\"", "\""),
+          'description' => "#{ev.description}".gsub("\\\"", "\""),
           'attendees' => attendees,
-          'htmlLink' => "#{ev.uid}".force_encoding('utf-8'),
+          'htmlLink' => "#{ev.uid}",
           'calId' => calPath
       }
 

@@ -44,7 +44,7 @@ DTSTART:#{params[:start].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
 DTEND:#{params[:end].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
-DESCRIPTION:#{params[:description]}
+DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
 #{attendees_str}
 END:VEVENT
 END:VCALENDAR
@@ -85,7 +85,7 @@ DTSTART:#{params[:start].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
 DTEND:#{params[:end].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
-DESCRIPTION:#{params[:description]}
+DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
 #{attendees_str}
 END:VEVENT
 END:VCALENDAR
