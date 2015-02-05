@@ -144,7 +144,7 @@ describe "OfficeAccount" do
     describe "#create_event" do
       it "should create event" do
         stub_request(:post, "https://outlook.office365.com/api/v1.0/me/calendars/cid1/events").
-            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"created by Multi-Calendar gem\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
+            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
                  :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
             to_return(:status => 201, :body => "{\"Id\":\"eid1\"}", :headers => {})
 
@@ -164,7 +164,7 @@ describe "OfficeAccount" do
     describe "#update_event" do
       it "should update event" do
         stub_request(:patch, "https://outlook.office365.com/api/v1.0/me/events/eid1").
-            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"created by Multi-Calendar gem\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
+            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
                  :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
             to_return(:status => 200, :body => "", :headers => {})
 

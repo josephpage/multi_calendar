@@ -1,9 +1,14 @@
+require 'action_view'
+
 OFFICE_API_HOST = "outlook.office365.com"
 OFFICE_API_PORT = 443
 OFFICE_READ_TIMEOUT = 10
 
 module MultiCalendar
   class OfficeAccount
+
+    include ActionView::Helpers::TextHelper
+    include ERB::Util
 
     attr_reader :refresh_token, :client_id, :client_secret
 
@@ -199,12 +204,16 @@ module MultiCalendar
 
     private
 
+    def format_text_as_html text
+      h(simple_format(text))
+    end
+
     def format_event_data params
       {
           "Subject" => params[:summary],
           "Body" => {
               "ContentType" => "HTML",
-              "Content" => params[:description]
+              "Content" => format_text_as_html("#{params[:description]}")
           },
           "Start" => params[:start_date].strftime(),
           "End" => params[:end_date].strftime(),
