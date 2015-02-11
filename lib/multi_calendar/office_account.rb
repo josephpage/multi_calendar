@@ -109,8 +109,7 @@ module MultiCalendar
 
       color_id = 0
       result = []
-      p res
-      p res.body
+
       JSON.parse(res.body)['value'].each do |hash|
         color_id += 1
 

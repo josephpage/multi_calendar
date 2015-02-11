@@ -146,11 +146,13 @@ describe "GoogleAccount" do
                                           'items' => [{
                                                           'id' => 'cid1',
                                                           'summary' => "Calendar 1",
-                                                          'colorId' => '17'
+                                                          'colorId' => '17',
+                                                          "time_zone" => "Europe/Paris"
                                                       },{
                                                           'id' => 'cid2',
                                                           'summary' => "Calendar 2",
-                                                          'colorId' => '42'
+                                                          'colorId' => '42',
+                                                          "time_zone" => "America/Los_angeles"
                                                       }
                                           ]
                                       })
@@ -162,11 +164,13 @@ describe "GoogleAccount" do
         expect(@google_account.list_calendars()).to eq([{
                                                             :id => 'cid1',
                                                             :summary => "Calendar 1",
-                                                            :colorId => '17'
+                                                            :colorId => '17',
+                                                            :timezone => "Europe/Paris"
                                                         },{
                                                             :id => 'cid2',
                                                             :summary => "Calendar 2",
-                                                            :colorId => '42'
+                                                            :colorId => '42',
+                                                            :timezone => "America/Los_Angeles"
                                                         }
                                                        ])
       end

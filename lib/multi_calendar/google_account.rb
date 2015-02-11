@@ -82,7 +82,8 @@ module MultiCalendar
         {
             id: item['id'],
             summary: item['summary'],
-            colorId: item['colorId']
+            colorId: item['colorId'],
+            timezone: item['time_zone']
         }
       }
     end

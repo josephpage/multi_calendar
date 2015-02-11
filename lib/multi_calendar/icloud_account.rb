@@ -65,7 +65,11 @@ module MultiCalendar
       client = ICloud::Client.new(username, password)
       color_id = 0
       result =[]
-      client.calendars.select{|c| c.name && c.path}.each{ |cal|
+      client.calendars.select{|c| c.name &&
+          c.path &&
+          !c.path.end_with?("/calendars/") &&
+          !c.path.end_with?("/calendars/tasks/") &&
+          !c.path.end_with?("/calendars/notification/")}.each{ |cal|
         color_id += 1
         result << {
             summary: cal.name,
