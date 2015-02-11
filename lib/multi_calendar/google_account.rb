@@ -133,6 +133,7 @@ module MultiCalendar
           location: "#{result.data['location']}",
           start: result.data['start'],
           end: result.data['end'],
+          private: result.data['visibility'] == 'private',
           all_day: result.data['start']['dateTime'].nil?,
           attendees: (result.data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
       }
@@ -154,6 +155,7 @@ module MultiCalendar
               },
               summary: params[:summary],
               location: params[:location],
+              visibility: (params[:private])?'private':'default',
               attendees: (params[:attendees] || []).map{|att|
                 {
                     email: att[:email]
@@ -183,6 +185,7 @@ module MultiCalendar
               },
               summary: params[:summary],
               location: params[:location],
+              visibility: (params[:private])?'private':'default',
               attendees: (params[:attendees] || []).map{|att|
                 {
                     email: att[:email]

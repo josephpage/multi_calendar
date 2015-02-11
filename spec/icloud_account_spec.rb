@@ -57,10 +57,7 @@ describe "IcloudAccount" do
         it "should list calendars" do
           expect(@icloud_account.list_calendars).to eq([
                                                            {:summary => "Personnelle", :id => "/207958951/calendars/home/", :colorId => 1},
-                                                           {:summary => "Nicolas Marlier", :id => "/207958951/calendars/", :colorId => 2},
-                                                           {:summary => "Rappels", :id => "/207958951/calendars/tasks/", :colorId => 3},
-                                                           {:summary => "Travail", :id => "/207958951/calendars/work/", :colorId => 4},
-                                                           {:summary => "notification", :id => "/207958951/calendars/notification/", :colorId => 5}
+                                                           {:summary => "Travail", :id => "/207958951/calendars/work/", :colorId => 2}
                                                        ])
         end
       end

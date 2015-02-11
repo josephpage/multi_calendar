@@ -152,7 +152,7 @@ describe "GoogleAccount" do
                                                           'id' => 'cid2',
                                                           'summary' => "Calendar 2",
                                                           'colorId' => '42',
-                                                          "time_zone" => "America/Los_angeles"
+                                                          "time_zone" => "America/Los_Angeles"
                                                       }
                                           ]
                                       })
@@ -259,6 +259,7 @@ describe "GoogleAccount" do
                                                     'displayName' => "Mark Zuck"
                                                 }
                                             ],
+                                            'visibility' => 'default',
                                             'start' => {
                                                 'dateTime' => "2015-01-31T12:00:00Z"
                                             },
@@ -285,6 +286,7 @@ describe "GoogleAccount" do
                                                              'dateTime' => "2015-01-31T13:00:00Z"
                                                          },
                                                          :all_day=>false,
+                                                         :private=>false,
                                                          :attendees=>[
                                                              {:email=>"john@doe.com", :name=>"john Doe"},
                                                              {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
@@ -309,6 +311,7 @@ describe "GoogleAccount" do
                 },
                 :summary => "New event",
                 :location => "Paris",
+                :visibility => "default",
                 :attendees => [
                     {:email => "you@yourdomain.com"}
                 ],
@@ -353,6 +356,7 @@ describe "GoogleAccount" do
                 },
                 :summary => "New event",
                 :location => "Paris",
+                :visibility => "default",
                 :attendees => [
                     {:email => "you@yourdomain.com"}
                 ],
