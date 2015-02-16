@@ -122,9 +122,9 @@ describe "IcloudAccount" do
       end
 
       describe "#create_event" do
-        it "should create event" do
+        it "should create event with attendees" do
           stub_request(:put, "https://marck%40zuck.com:password@p01-caldav.icloud.com/207958951/calendars/20150101T120000Z-.ics/").
-              with(:body => "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN\nBEGIN:VEVENT\nUID:20150101T120000Z-\nDTSTART:20150101T120000Z\nDTEND:20150101T130000Z\nSUMMARY:New event\nLOCATION:Paris\nDESCRIPTION:created by Multi-Calendar gem\nORGANIZER;CN=Organizer:mailto:marck@zuck.com\nATTENDEE;CN=Organizer:mailto:marck@zuck.com\nATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:you@yourdomain.com\n\nEND:VEVENT\nEND:VCALENDAR\n").
+              with(:body => "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN\nBEGIN:VEVENT\nUID:20150101T120000Z-\nDTSTART:20150101T120000Z\nDTEND:20150101T130000Z\nSUMMARY:New event\nLOCATION:Paris\nDESCRIPTION:created by Multi-Calendar gem\nATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:you@yourdomain.com\nORGANIZER;CN=Organizer:mailto:marck@zuck.com\nATTENDEE;CN=Organizer:mailto:marck@zuck.com\n\nEND:VEVENT\nEND:VCALENDAR\n").
               to_return(:status => 201, :body => "", :headers => {})
 
           expect(@icloud_account.create_event(
@@ -137,13 +137,29 @@ describe "IcloudAccount" do
                      location: "Paris"
                  )).to eq("20150101T120000Z-")
         end
+
+        it "should create event without attendees" do
+          stub_request(:put, "https://marck%40zuck.com:password@p01-caldav.icloud.com/207958951/calendars/20150101T120000Z-.ics/").
+              with(:body => "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN\nBEGIN:VEVENT\nUID:20150101T120000Z-\nDTSTART:20150101T120000Z\nDTEND:20150101T130000Z\nSUMMARY:New event\nLOCATION:Paris\nDESCRIPTION:created by Multi-Calendar gem\n\nEND:VEVENT\nEND:VCALENDAR\n").
+              to_return(:status => 201, :body => "", :headers => {})
+
+          expect(@icloud_account.create_event(
+                     calendar_id: '/207958951/calendars/',
+                     start_date: DateTime.new(2015, 1, 1, 12, 0),
+                     end_date: DateTime.new(2015, 1, 1, 13, 0),
+                     summary: "New event",
+                     description: "created by Multi-Calendar gem",
+                     attendees: [],
+                     location: "Paris"
+                 )).to eq("20150101T120000Z-")
+        end
       end
 
       describe "#update_event" do
 
-        it "should update event" do
+        it "should update event with attendees" do
           stub_request(:put, "https://marck%40zuck.com:password@p01-caldav.icloud.com/207958951/calendars/20150109T090000Z-7016265254.ics/").
-              with(:body => "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN\nBEGIN:VEVENT\nUID:20150109T090000Z-7016265254\nDTSTART:20150101T120000Z\nDTEND:20150101T130000Z\nSUMMARY:New event\nLOCATION:Paris\nDESCRIPTION:created by Multi-Calendar gem\nORGANIZER;CN=Organizer:mailto:marck@zuck.com\nATTENDEE;CN=Organizer:mailto:marck@zuck.com\nATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:you@yourdomain.com\n\nEND:VEVENT\nEND:VCALENDAR\n").
+              with(:body => "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN\nBEGIN:VEVENT\nUID:20150109T090000Z-7016265254\nDTSTART:20150101T120000Z\nDTEND:20150101T130000Z\nSUMMARY:New event\nLOCATION:Paris\nDESCRIPTION:created by Multi-Calendar gem\nATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:you@yourdomain.com\nORGANIZER;CN=Organizer:mailto:marck@zuck.com\nATTENDEE;CN=Organizer:mailto:marck@zuck.com\n\nEND:VEVENT\nEND:VCALENDAR\n").
               to_return(:status => 204, :body => "", :headers => {})
 
           expect(@icloud_account.update_event(
@@ -154,6 +170,23 @@ describe "IcloudAccount" do
                      summary: "New event",
                      description: "created by Multi-Calendar gem",
                      attendees: [{email: "you@yourdomain.com"}],
+                     location: "Paris"
+                 )).to eq(true)
+        end
+
+        it "should update event without attendees" do
+          stub_request(:put, "https://marck%40zuck.com:password@p01-caldav.icloud.com/207958951/calendars/20150109T090000Z-7016265254.ics/").
+              with(:body => "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN\nBEGIN:VEVENT\nUID:20150109T090000Z-7016265254\nDTSTART:20150101T120000Z\nDTEND:20150101T130000Z\nSUMMARY:New event\nLOCATION:Paris\nDESCRIPTION:created by Multi-Calendar gem\n\nEND:VEVENT\nEND:VCALENDAR\n").
+              to_return(:status => 204, :body => "", :headers => {})
+
+          expect(@icloud_account.update_event(
+                     event_id: '20150109T090000Z-7016265254',
+                     calendar_id: '/207958951/calendars/',
+                     start_date: DateTime.new(2015, 1, 1, 12, 0),
+                     end_date: DateTime.new(2015, 1, 1, 13, 0),
+                     summary: "New event",
+                     description: "created by Multi-Calendar gem",
+                     attendees: [],
                      location: "Paris"
                  )).to eq(true)
         end

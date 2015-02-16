@@ -24,15 +24,20 @@ module ICloud
       raise "Missing start param" unless params[:start]
       raise "Missing end param" unless params[:end]
 
-      attendees_str = <<END
-ORGANIZER;CN=Organizer:mailto:#{self.client.email}
-ATTENDEE;CN=Organizer:mailto:#{self.client.email}
-END
+
+      attendees_str = ""
       attendees_str += (params[:attendees] || []).map{|attendee|
         <<END
 ATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:#{attendee}
 END
       }.join("\n")
+
+      unless attendees_str.blank?
+        attendees_str += <<END
+ORGANIZER;CN=Organizer:mailto:#{self.client.email}
+ATTENDEE;CN=Organizer:mailto:#{self.client.email}
+END
+      end
 
       xml_request = <<END
 BEGIN:VCALENDAR
@@ -59,16 +64,19 @@ END
       raise "Missing start param" unless params[:start]
       raise "Missing end param" unless params[:end]
 
-      attendees_str = <<END
-ORGANIZER;CN=Organizer:mailto:#{self.client.email}
-ATTENDEE;CN=Organizer:mailto:#{self.client.email}
-END
-
+      attendees_str = ""
       attendees_str += (params[:attendees] || []).map{|attendee|
         <<END
 ATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:#{attendee}
 END
       }.join("\n")
+
+      unless attendees_str.blank?
+      attendees_str += <<END
+ORGANIZER;CN=Organizer:mailto:#{self.client.email}
+ATTENDEE;CN=Organizer:mailto:#{self.client.email}
+END
+      end
 
 
       randomizator = ""
