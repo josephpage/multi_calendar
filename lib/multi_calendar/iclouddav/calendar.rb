@@ -26,7 +26,9 @@ module ICloud
 
 
       attendees_str = ""
-      attendees_str += (params[:attendees] || []).map{|attendee|
+      attendees_str += (params[:attendees] || []).select{|attendee|
+        attendee != self.client.email
+      }.map{|attendee|
         <<END
 ATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:#{attendee}
 END
@@ -65,7 +67,9 @@ END
       raise "Missing end param" unless params[:end]
 
       attendees_str = ""
-      attendees_str += (params[:attendees] || []).map{|attendee|
+      attendees_str += (params[:attendees] || []).select{|attendee|
+        attendee != self.client.email
+      }.map{|attendee|
         <<END
 ATTENDEE;PARTSTAT=NEEDS-ACTION;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:#{attendee}
 END

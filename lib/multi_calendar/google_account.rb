@@ -227,8 +227,10 @@ module MultiCalendar
         {
             email: att[:email]
         }
+      }.select{|att|
+        att[:email] != self.email
       }
-      if result.length > 0 && result.select{|att| att[:email] == self.email}.empty?
+      if result.length > 0
         result << {
             email: self.email,
             responseStatus: "accepted"
