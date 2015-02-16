@@ -156,11 +156,7 @@ module MultiCalendar
               summary: params[:summary],
               location: params[:location],
               visibility: (params[:private])?'private':'default',
-              attendees: (params[:attendees] || []).map{|att|
-                {
-                    email: att[:email]
-                }
-              },
+              attendees: generate_attendees_array(params[:attendees]),
               description: params[:description]
           },
           :headers => {'Content-Type' => 'application/json'})
@@ -186,11 +182,7 @@ module MultiCalendar
               summary: params[:summary],
               location: params[:location],
               visibility: (params[:private])?'private':'default',
-              attendees: (params[:attendees] || []).map{|att|
-                {
-                    email: att[:email]
-                }
-              },
+              attendees: generate_attendees_array(params[:attendees]),
               description: params[:description]
           },
           :headers => {'Content-Type' => 'application/json'})
@@ -226,6 +218,24 @@ module MultiCalendar
               }
           },
           :headers => {'Content-Type' => 'application/json'})
+    end
+
+    private
+
+    def generate_attendees_array attendees
+      result = (attendees || []).map{|att|
+        {
+            email: att[:email]
+        }
+      }
+      if result.length > 0 && result.select{|att| att[:email] == self.email}.empty?
+        result << {
+            email: self.email,
+            responseStatus: "accepted"
+        }
+      end
+
+      result
     end
   end
 end
