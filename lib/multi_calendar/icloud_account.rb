@@ -206,7 +206,9 @@ module MultiCalendar
           'description' => "#{ev.description}".gsub("\\\"", "\""),
           'attendees' => attendees,
           'htmlLink' => "#{ev.uid}",
-          'calId' => calPath
+          'calId' => calPath,
+          'private' => false,
+          'owned' => true
       }
 
       if ev.dtstart.class == DateTime

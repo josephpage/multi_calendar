@@ -107,7 +107,9 @@ module MultiCalendar
         if calendar_id == email
           time_zone = result.data['timeZone']
         end
-        total_result += result.data['items'].map { |item| item['calId'] = calendar_id; item }
+        total_result += result.data['items'].map { |item|
+          build_event_hash_from_response(item, calendar_id)
+        }
       end
 
       #{
@@ -126,17 +128,7 @@ module MultiCalendar
           },
           :headers => {'Content-Type' => 'application/json'})
 
-      {
-          id: result.data['id'],
-          summary: "#{result.data['summary']}",
-          description: "#{result.data['description']}",
-          location: "#{result.data['location']}",
-          start: result.data['start'],
-          end: result.data['end'],
-          private: result.data['visibility'] == 'private',
-          all_day: result.data['start']['dateTime'].nil?,
-          attendees: (result.data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
-      }
+      build_event_hash_from_response result.data, params[:calendar_id]
     end
 
     def create_event params
@@ -238,6 +230,22 @@ module MultiCalendar
       end
 
       result
+    end
+
+    def build_event_hash_from_response data, calendar_id
+      {
+          id: data['id'],
+          summary: "#{data['summary']}",
+          description: "#{data['description']}",
+          location: "#{data['location']}",
+          start: data['start'],
+          end: data['end'],
+          private: data['visibility'] == 'private',
+          all_day: data['start']['dateTime'].nil?,
+          owned: data['organizer']['self'],
+          attendees: (data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
+          calId: calendar_id
+      }
     end
   end
 end

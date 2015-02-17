@@ -192,7 +192,32 @@ describe "GoogleAccount" do
         })).and_return(
                                       double("response", data: {
                                         'timeZone' => "Europe/Paris",
-                                        'items' => [{'event_id' => "eid1"}]
+                                        'items' => [{
+                                                        'id' => 'eid1',
+                                                        'summary' => "Event",
+                                                        'description' => "Notes",
+                                                        'location' => "Paris",
+                                                        'attendees' => [
+                                                            {
+                                                                'email' => 'john@doe.com',
+                                                                'displayName' => "john Doe"
+                                                            },
+                                                            {
+                                                                'email' => 'mark@zuck.com',
+                                                                'displayName' => "Mark Zuck"
+                                                            }
+                                                        ],
+                                                        'organizer' => {
+                                                            'self' => true
+                                                        },
+                                                        'visibility' => 'default',
+                                                        'start' => {
+                                                            'dateTime' => "2015-01-31T12:00:00Z"
+                                                        },
+                                                        'end' => {
+                                                            'dateTime' => "2015-01-31T13:00:00Z"
+                                                        }
+                                                    }]
                                       })
                                   )
 
@@ -208,7 +233,48 @@ describe "GoogleAccount" do
         })).and_return(
                                       double("response", data: {
                                           'timeZone' => "Europe/Paris",
-                                          'items' => [{'event_id' => "eid2"}, {'event_id' => "eid3"}]
+                                          'items' => [{
+                                                          'id' => 'eid2',
+                                                          'summary' => "Event",
+                                                          'description' => "Notes",
+                                                          'location' => "Paris",
+                                                          'attendees' => [],
+                                                          'organizer' => {
+                                                              'self' => false
+                                                          },
+                                                          'visibility' => 'private',
+                                                          'start' => {
+                                                              'dateTime' => "2015-01-31T12:00:00Z"
+                                                          },
+                                                          'end' => {
+                                                              'dateTime' => "2015-01-31T13:00:00Z"
+                                                          }
+                                                      }, {
+                                              'id' => 'eid3',
+                                              'summary' => "Event",
+                                              'description' => "Notes",
+                                              'location' => "Paris",
+                                              'attendees' => [
+                                                  {
+                                                      'email' => 'john@doe.com',
+                                                      'displayName' => "john Doe"
+                                                  },
+                                                  {
+                                                      'email' => 'mark@zuck.com',
+                                                      'displayName' => "Mark Zuck"
+                                                  }
+                                              ],
+                                              'organizer' => {
+                                                  'self' => true
+                                              },
+                                              'visibility' => 'default',
+                                              'start' => {
+                                                  'dateTime' => "2015-01-31T12:00:00Z"
+                                              },
+                                              'end' => {
+                                                  'dateTime' => "2015-01-31T13:00:00Z"
+                                              }
+                                          }]
                                       })
                                   )
         allow(@google_account).to receive_message_chain(:service, :events, :list).and_return "list"
@@ -219,18 +285,60 @@ describe "GoogleAccount" do
                                                start_date: DateTime.new(2015, 1,1),
                                                end_date: DateTime.new(2015, 1,30)
                                            })).to eq([
-                                                         {
-                                                             "event_id"=>"eid1",
-                                                             "calId"=>"cid1"
-                                                         },
-                                                         {
-                                                             "event_id"=>"eid2",
-                                                             "calId"=>"cid2"
-                                                         },
-                                                         {
-                                                             "event_id"=>"eid3",
-                                                             "calId"=>"cid2"
-                                                         }
+                                                                 {
+                                                                     :id=>"eid1",
+                                                                     :summary=>"Event",
+                                                                     :description=>"Notes",
+                                                                     :location=>"Paris",
+                                                                     :start=> {
+                                                                         'dateTime' => "2015-01-31T12:00:00Z"
+                                                                     },
+                                                                     :end=> {
+                                                                         'dateTime' => "2015-01-31T13:00:00Z"
+                                                                     },
+                                                                     :calId=>"cid1",
+                                                                     :all_day=>false,
+                                                                     :private=>false,
+                                                                     owned: true,
+                                                                     :attendees=>[
+                                                                         {:email=>"john@doe.com", :name=>"john Doe"},
+                                                                         {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
+                                                                     ]},
+                                                                 {
+                                                                     :id=>"eid2",
+                                                                     :summary=>"Event",
+                                                                     :description=>"Notes",
+                                                                     :location=>"Paris",
+                                                                     :start=> {
+                                                                         'dateTime' => "2015-01-31T12:00:00Z"
+                                                                     },
+                                                                     :end=> {
+                                                                         'dateTime' => "2015-01-31T13:00:00Z"
+                                                                     },
+                                                                     :calId=>"cid2",
+                                                                     :all_day=>false,
+                                                                     :private=>true,
+                                                                     owned: false,
+                                                                     :attendees=>[]},
+                                                                 {
+                                                                     :id=>"eid3",
+                                                                     :summary=>"Event",
+                                                                     :description=>"Notes",
+                                                                     :location=>"Paris",
+                                                                     :start=> {
+                                                                         'dateTime' => "2015-01-31T12:00:00Z"
+                                                                     },
+                                                                     :end=> {
+                                                                         'dateTime' => "2015-01-31T13:00:00Z"
+                                                                     },
+                                                                     :calId=>"cid2",
+                                                                     :all_day=>false,
+                                                                     :private=>false,
+                                                                     owned: true,
+                                                                     :attendees=>[
+                                                                         {:email=>"john@doe.com", :name=>"john Doe"},
+                                                                         {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
+                                                                     ]}
                                                      ])
       end
     end
@@ -260,6 +368,9 @@ describe "GoogleAccount" do
                                                     'displayName' => "Mark Zuck"
                                                 }
                                             ],
+                                            'organizer' => {
+                                                'self' => true
+                                            },
                                             'visibility' => 'default',
                                             'start' => {
                                                 'dateTime' => "2015-01-31T12:00:00Z"
@@ -286,8 +397,10 @@ describe "GoogleAccount" do
                                                          :end=> {
                                                              'dateTime' => "2015-01-31T13:00:00Z"
                                                          },
+                                                         :calId=>"cid1",
                                                          :all_day=>false,
                                                          :private=>false,
+                                                         owned: true,
                                                          :attendees=>[
                                                              {:email=>"john@doe.com", :name=>"john Doe"},
                                                              {:email=>"mark@zuck.com", :name=>"Mark Zuck"}

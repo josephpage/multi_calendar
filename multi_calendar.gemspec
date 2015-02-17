@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'multi_calendar'
-  s.version     = '0.1.14'
-  s.date        = '2015-01-27'
+  s.version     = '0.1.15'
+  s.date        = '2015-02-17'
   s.summary     = "Multi Calendar"
   s.description = "A gem to rule them all"
   s.authors     = ["Nicolas Marlier"]

@@ -122,8 +122,8 @@ describe "OfficeAccount" do
             end_date: DateTime.new(2015, 1, 30),
             calendar_ids: ["cid1", "cid2"]
                )).to eq([
-                            {"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1", "calId"=>"cid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}},
-                            {"id"=>"eid2", "summary"=>"Cool event #2", "description"=>"", "attendees"=>[], "htmlLink"=>"eid2", "calId"=>"cid1", "start"=>{:dateTime=>"2015-01-02T12:00:00+00:00"}, "end"=>{:dateTime=>"2015-01-02T13:00:00+00:00"}}
+                            {"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1", "calId"=>"cid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true},
+                            {"id"=>"eid2", "summary"=>"Cool event #2", "description"=>"", "attendees"=>[], "htmlLink"=>"eid2", "calId"=>"cid1", "start"=>{:dateTime=>"2015-01-02T12:00:00+00:00"}, "end"=>{:dateTime=>"2015-01-02T13:00:00+00:00"}, 'private' => false, 'owned' => true}
                         ])
       end
     end
@@ -137,7 +137,7 @@ describe "OfficeAccount" do
         expect(@office_account.get_event(
                    calendar_id: "cid1",
                    event_id: "eid1"
-               )).to eq({"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}})
+               )).to eq({"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true, "calId" => ""})
       end
     end
 

@@ -166,7 +166,7 @@ module MultiCalendar
       )
 
       ev = JSON.parse(res.body)
-      build_event_hash_from_response(ev, nil)
+      build_event_hash_from_response(ev, "")
     end
 
     def create_event params
@@ -256,7 +256,10 @@ module MultiCalendar
           'description' => "#{ev['BodyPreview']}",
           'attendees' => attendees,
           'htmlLink' => "#{ev['Id']}",
-          'calId' => calendar_id
+          'calId' => calendar_id,
+          'private' => false,
+          'owned' => true
+
       }
 
       if ev['Location'] && ev['Location']['DisplayName']
@@ -279,7 +282,8 @@ module MultiCalendar
             dateTime: DateTime.parse(ev['End']).strftime("%FT%T%:z")
         }
       end
-      event_hash.select{|k, v| v}
+      event_hash
+      #event_hash.select{|k, v| v}
     end
 
   end
