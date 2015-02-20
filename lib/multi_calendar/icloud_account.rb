@@ -123,14 +123,7 @@ module MultiCalendar
       cals = client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
-      cal.create_event({
-                           summary: "#{params[:summary]}",
-                           start: params[:start_date],
-                           end: params[:end_date],
-                           attendees: (params[:attendees] || []).map{|att| att[:email]},
-                           description: "#{params[:description]}",
-                           location: "#{params[:location]}"
-                       })
+      cal.create_event event_data_from_params(params)
     end
 
     def update_event params
@@ -138,15 +131,7 @@ module MultiCalendar
       cals = client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
-      cal.update_event({
-                           event_id: params[:event_id],
-                           summary: "#{params[:summary]}",
-                           start: params[:start_date],
-                           end: params[:end_date],
-                           attendees: (params[:attendees] || []).map{|att| att[:email]},
-                           description: "#{params[:description]}",
-                           location: "#{params[:location]}"
-                       })
+      cal.update_event event_data_from_params(params)
     end
 
     def delete_event params
@@ -172,6 +157,28 @@ module MultiCalendar
     end
 
     private
+
+    def event_data_from_params params
+
+      params[:start_date] = params[:start_date].to_time.utc.to_datetime
+      params[:end_date] = params[:end_date].to_time.utc.to_datetime
+      start_param = params[:start_date].strftime("%Y%m%dT%H%M%SZ")
+      end_param = params[:end_date].strftime("%Y%m%dT%H%M%SZ")
+      if params[:all_day]
+        start_param = params[:start_date].strftime("%Y%m%d")
+        end_param = params[:end_date].strftime("%Y%m%d")
+      end
+
+      {
+          event_id: params[:event_id],
+          summary: "#{params[:summary]}",
+          start: start_param,
+          end: end_param,
+          attendees: (params[:attendees] || []).map{|att| att[:email]},
+          description: "#{params[:description]}",
+          location: "#{params[:location]}"
+      }
+    end
 
     def build_event_hash_from_response ev, calPath
       attendees = ev.attendee_property.map{|att|
@@ -218,6 +225,7 @@ module MultiCalendar
         event_hash['end'] = {
             dateTime: ev.dtend.strftime("%FT%T%:z")
         }
+        event_hash['all_day'] = false
       else
         event_hash['start'] = {
             date: ev.dtstart.strftime("%F")
@@ -225,6 +233,7 @@ module MultiCalendar
         event_hash['end'] = {
             date: ev.dtend.strftime("%F")
         }
+        event_hash['all_day'] = true
       end
 
       event_hash

@@ -47,8 +47,8 @@ VERSION:2.0
 PRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN
 BEGIN:VEVENT
 UID:#{params[:event_id]}
-DTSTART:#{params[:start].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
-DTEND:#{params[:end].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
+DTSTART:#{params[:start]}
+DTEND:#{params[:end]}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
 DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
@@ -86,15 +86,15 @@ END
       randomizator = ""
       res_code = "412"
       while res_code == "412"
-        uid = "#{params[:start].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}-#{randomizator}"
+        uid = "#{params[:start]}-#{randomizator}"
         xml_request = <<END
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN
 BEGIN:VEVENT
 UID:#{uid}
-DTSTART:#{params[:start].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
-DTEND:#{params[:end].to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}
+DTSTART:#{params[:start]}
+DTEND:#{params[:end]}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
 DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}

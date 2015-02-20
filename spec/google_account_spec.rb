@@ -495,6 +495,49 @@ describe "GoogleAccount" do
       end
     end
 
+    describe "#create_event all_day" do
+      before(:each) do
+        allow(@google_account).to receive_message_chain(:client, :execute).with(({
+            :api_method => "insert",
+            :parameters => {
+                :calendarId => "cid1",
+                :sendNotifications => true
+            },
+            body_object: {
+                :start => {
+                    :date => "2015-01-01"
+                },
+                :end => {
+                    :date => "2015-01-01"
+                },
+                :summary => "New event",
+                :location => "Paris",
+                :visibility => "default",
+                :attendees => [],
+                :description => "created by Multi-Calendar gem"
+            },
+            :headers => {"Content-Type" => "application/json"}
+        })).and_return(
+                                      double("response", data: double("data", id: "eid1"))
+                                  )
+        allow(@google_account).to receive_message_chain(:service, :events, :insert).and_return "insert"
+      end
+
+      it "should create event with attendees" do
+        expect(@google_account.create_event({
+                                                calendar_id: 'cid1',
+                                                start_date: DateTime.new(2015, 1, 1, 12, 0),
+                                                end_date: DateTime.new(2015, 1, 1, 13, 0),
+                                                all_day: true,
+                                                summary: "New event",
+                                                description: "created by Multi-Calendar gem",
+                                                attendees: [],
+                                                location: "Paris"
+                                            }
+               )).to eq("eid1")
+      end
+    end
+
     describe "#update_event with attendees" do
       before(:each) do
         allow(@google_account).to receive_message_chain(:client, :execute).with(({
@@ -577,6 +620,51 @@ describe "GoogleAccount" do
                                                 event_id: 'eid1',
                                                 start_date: DateTime.new(2015, 1, 1, 12, 0),
                                                 end_date: DateTime.new(2015, 1, 1, 13, 0),
+                                                summary: "New event",
+                                                description: "created by Multi-Calendar gem",
+                                                attendees: [],
+                                                location: "Paris"
+                                            }
+               )).to eq("eid1")
+      end
+    end
+
+    describe "#update_event all_day" do
+      before(:each) do
+        allow(@google_account).to receive_message_chain(:client, :execute).with(({
+            :api_method => "update",
+            :parameters => {
+                :calendarId => "cid1",
+                :eventId => "eid1",
+                :sendNotifications => true
+            },
+            body_object: {
+                :start => {
+                    :date => "2015-01-01"
+                },
+                :end => {
+                    :date => "2015-01-01"
+                },
+                :summary => "New event",
+                :location => "Paris",
+                :visibility => "default",
+                :attendees => [],
+                :description => "created by Multi-Calendar gem"
+            },
+            :headers => {"Content-Type" => "application/json"}
+        })).and_return(
+                                      double("response", data: double("data", id: "eid1"))
+                                  )
+        allow(@google_account).to receive_message_chain(:service, :events, :update).and_return "update"
+      end
+
+      it "should update event without attendees" do
+        expect(@google_account.update_event({
+                                                calendar_id: 'cid1',
+                                                event_id: 'eid1',
+                                                start_date: DateTime.new(2015, 1, 1, 12, 0),
+                                                end_date: DateTime.new(2015, 1, 1, 13, 0),
+                                                all_day: true,
                                                 summary: "New event",
                                                 description: "created by Multi-Calendar gem",
                                                 attendees: [],

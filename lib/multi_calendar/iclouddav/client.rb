@@ -155,8 +155,8 @@ END
         host = Net::HTTP.new(hhost, self.port)
         host.use_ssl = true
 
-        #host.verify_mode = OpenSSL::SSL::VERIFY_NONE # For development
-        host.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        host.verify_mode = OpenSSL::SSL::VERIFY_NONE # For development
+        #host.verify_mode = OpenSSL::SSL::VERIFY_PEER
 
 
         if self.debug

@@ -208,14 +208,22 @@ module MultiCalendar
     end
 
     def format_event_data params
+      start_param = params[:start_date].strftime()
+      end_param = params[:end_date].strftime()
+      if params[:all_day]
+        start_param = params[:start_date].strftime("%F")
+        end_param = params[:end_date].strftime("%F")
+      end
+
       {
           "Subject" => params[:summary],
           "Body" => {
               "ContentType" => "HTML",
               "Content" => format_text_as_html("#{params[:description]}")
           },
-          "Start" => params[:start_date].strftime(),
-          "End" => params[:end_date].strftime(),
+          "Start" => start_param,
+          "End" => end_param,
+          "IsAllDay" => params[:all_day] || false,
           "Location" => {"DisplayName" => params[:location]},
           "Attendees" => (params[:attendees] || []).map { |attendee|
             {
@@ -274,6 +282,7 @@ module MultiCalendar
         event_hash['end'] = {
             date: DateTime.parse(ev['End']).strftime("%F")
         }
+        event_hash['all_day'] = true
       else
         event_hash['start'] = {
             dateTime: DateTime.parse(ev['Start']).strftime("%FT%T%:z")
@@ -281,6 +290,7 @@ module MultiCalendar
         event_hash['end'] = {
             dateTime: DateTime.parse(ev['End']).strftime("%FT%T%:z")
         }
+        event_hash['all_day'] = false
       end
       event_hash
       #event_hash.select{|k, v| v}

@@ -132,25 +132,14 @@ module MultiCalendar
     end
 
     def create_event params
+
       result = client.execute(
           :api_method => service.events.insert,
           :parameters => {
               calendarId: params[:calendar_id],
               sendNotifications: true,
           },
-          :body_object => {
-              start: {
-                  dateTime: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
-              },
-              end: {
-                  dateTime: params[:end_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
-              },
-              summary: params[:summary],
-              location: params[:location],
-              visibility: (params[:private])?'private':'default',
-              attendees: generate_attendees_array(params[:attendees]),
-              description: params[:description]
-          },
+          :body_object => build_event_data_from_hash(params),
           :headers => {'Content-Type' => 'application/json'})
 
       result.data.id
@@ -164,19 +153,7 @@ module MultiCalendar
               eventId: params[:event_id],
               sendNotifications: true
           },
-          :body_object => {
-              start: {
-                  dateTime: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
-              },
-              end: {
-                  dateTime: params[:end_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
-              },
-              summary: params[:summary],
-              location: params[:location],
-              visibility: (params[:private])?'private':'default',
-              attendees: generate_attendees_array(params[:attendees]),
-              description: params[:description]
-          },
+          :body_object => build_event_data_from_hash(params),
           :headers => {'Content-Type' => 'application/json'})
 
       result.data.id
@@ -230,6 +207,25 @@ module MultiCalendar
       end
 
       result
+    end
+
+    def build_event_data_from_hash params
+      start_param = { dateTime: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z") }
+      end_param = { dateTime: params[:end_date].strftime("%Y-%m-%dT%H:%M:%S%Z") }
+      if params[:all_day]
+        start_param = { date: params[:start_date].strftime("%Y-%m-%d") }
+        end_param = { date: params[:end_date].strftime("%Y-%m-%d") }
+      end
+
+      {
+          start: start_param,
+          end: end_param,
+          summary: params[:summary],
+          location: params[:location],
+          visibility: (params[:private])?'private':'default',
+          attendees: generate_attendees_array(params[:attendees]),
+          description: params[:description]
+      }
     end
 
     def build_event_hash_from_response data, calendar_id

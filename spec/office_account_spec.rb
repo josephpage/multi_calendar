@@ -122,8 +122,8 @@ describe "OfficeAccount" do
             end_date: DateTime.new(2015, 1, 30),
             calendar_ids: ["cid1", "cid2"]
                )).to eq([
-                            {"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1", "calId"=>"cid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true},
-                            {"id"=>"eid2", "summary"=>"Cool event #2", "description"=>"", "attendees"=>[], "htmlLink"=>"eid2", "calId"=>"cid1", "start"=>{:dateTime=>"2015-01-02T12:00:00+00:00"}, "end"=>{:dateTime=>"2015-01-02T13:00:00+00:00"}, 'private' => false, 'owned' => true}
+                            {"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1", "calId"=>"cid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true, 'all_day' => true},
+                            {"id"=>"eid2", "summary"=>"Cool event #2", "description"=>"", "attendees"=>[], "htmlLink"=>"eid2", "calId"=>"cid1", "start"=>{:dateTime=>"2015-01-02T12:00:00+00:00"}, "end"=>{:dateTime=>"2015-01-02T13:00:00+00:00"}, 'private' => false, 'owned' => true, 'all_day' => false}
                         ])
       end
     end
@@ -137,14 +137,14 @@ describe "OfficeAccount" do
         expect(@office_account.get_event(
                    calendar_id: "cid1",
                    event_id: "eid1"
-               )).to eq({"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true, "calId" => ""})
+               )).to eq({"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true, "calId" => "", 'all_day' => true})
       end
     end
 
     describe "#create_event" do
       it "should create event" do
         stub_request(:post, "https://outlook.office365.com/api/v1.0/me/calendars/cid1/events").
-            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
+            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"IsAllDay\":false,\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
                  :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
             to_return(:status => 201, :body => "{\"Id\":\"eid1\"}", :headers => {})
 
@@ -161,10 +161,31 @@ describe "OfficeAccount" do
       end
     end
 
+    describe "#create_event all day" do
+      it "should create event all day" do
+        stub_request(:post, "https://outlook.office365.com/api/v1.0/me/calendars/cid1/events").
+            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01\",\"End\":\"2015-01-01\",\"IsAllDay\":true,\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
+                 :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
+            to_return(:status => 201, :body => "{\"Id\":\"eid1\"}", :headers => {})
+
+
+        expect(@office_account.create_event(
+                   calendar_id: "cid1",
+                   start_date: DateTime.new(2015,1,1),
+                   end_date: DateTime.new(2015,1,1),
+                   summary: "New event",
+                   all_day: true,
+                   description: "created by Multi-Calendar gem",
+                   attendees: [{email: "you@yourdomain.com"}],
+                   location: "Paris"
+               )).to eq("eid1")
+      end
+    end
+
     describe "#update_event" do
       it "should update event" do
         stub_request(:patch, "https://outlook.office365.com/api/v1.0/me/events/eid1").
-            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
+            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01T12:00:00+00:00\",\"End\":\"2015-01-01T13:00:00+00:00\",\"IsAllDay\":false,\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
                  :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
             to_return(:status => 200, :body => "", :headers => {})
 
@@ -174,6 +195,27 @@ describe "OfficeAccount" do
                    start_date: DateTime.new(2015,1,1,12,0),
                    end_date: DateTime.new(2015,1,1,13,0),
                    summary: "New event",
+                   description: "created by Multi-Calendar gem",
+                   attendees: [{email: "you@yourdomain.com"}],
+                   location: "Paris"
+               )).to eq(true)
+      end
+    end
+
+    describe "#update_event all day" do
+      it "should update event all day" do
+        stub_request(:patch, "https://outlook.office365.com/api/v1.0/me/events/eid1").
+            with(:body => "{\"Subject\":\"New event\",\"Body\":{\"ContentType\":\"HTML\",\"Content\":\"<p>created by Multi-Calendar gem</p>\"},\"Start\":\"2015-01-01\",\"End\":\"2015-01-01\",\"IsAllDay\":true,\"Location\":{\"DisplayName\":\"Paris\"},\"Attendees\":[{\"EmailAddress\":{\"Address\":\"you@yourdomain.com\"},\"Type\":\"Required\"}]}",
+                 :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
+            to_return(:status => 200, :body => "", :headers => {})
+
+        expect(@office_account.update_event(
+                   calendar_id: "cid1",
+                   event_id: "eid1",
+                   start_date: DateTime.new(2015,1,1),
+                   end_date: DateTime.new(2015,1,1),
+                   summary: "New event",
+                   all_day: true,
                    description: "created by Multi-Calendar gem",
                    attendees: [{email: "you@yourdomain.com"}],
                    location: "Paris"
