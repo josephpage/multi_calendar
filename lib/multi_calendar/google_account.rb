@@ -229,6 +229,10 @@ module MultiCalendar
     end
 
     def build_event_hash_from_response data, calendar_id
+      owned = false
+      if data['organizer'] && data['organizer']['self']
+        owned = true
+      end
       {
           id: data['id'],
           summary: "#{data['summary']}",
@@ -238,7 +242,7 @@ module MultiCalendar
           end: data['end'],
           private: data['visibility'] == 'private',
           all_day: data['start']['dateTime'].nil?,
-          owned: data['organizer']['self'],
+          owned: owned,
           attendees: (data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
           calId: calendar_id
       }
