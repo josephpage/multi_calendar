@@ -286,56 +286,56 @@ describe "GoogleAccount" do
                                                end_date: DateTime.new(2015, 1,30)
                                            })).to eq([
                                                                  {
-                                                                     :id=>"eid1",
-                                                                     :summary=>"Event",
-                                                                     :description=>"Notes",
-                                                                     :location=>"Paris",
-                                                                     :start=> {
+                                                                     'id'=>"eid1",
+                                                                     'summary'=>"Event",
+                                                                     'description'=>"Notes",
+                                                                     'location'=>"Paris",
+                                                                     'start'=> {
                                                                          'dateTime' => "2015-01-31T12:00:00Z"
                                                                      },
-                                                                     :end=> {
+                                                                     'end'=> {
                                                                          'dateTime' => "2015-01-31T13:00:00Z"
                                                                      },
-                                                                     :calId=>"cid1",
-                                                                     :all_day=>false,
-                                                                     :private=>false,
-                                                                     owned: true,
-                                                                     :attendees=>[
+                                                                     'calId'=>"cid1",
+                                                                     'all_day'=>false,
+                                                                     'private'=>false,
+                                                                     'owned' => true,
+                                                                     'attendees'=>[
                                                                          {:email=>"john@doe.com", :name=>"john Doe"},
                                                                          {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
                                                                      ]},
                                                                  {
-                                                                     :id=>"eid2",
-                                                                     :summary=>"Event",
-                                                                     :description=>"Notes",
-                                                                     :location=>"Paris",
-                                                                     :start=> {
+                                                                     'id'=>"eid2",
+                                                                     'summary'=>"Event",
+                                                                     'description'=>"Notes",
+                                                                     'location'=>"Paris",
+                                                                     'start'=> {
                                                                          'dateTime' => "2015-01-31T12:00:00Z"
                                                                      },
-                                                                     :end=> {
+                                                                     'end'=> {
                                                                          'dateTime' => "2015-01-31T13:00:00Z"
                                                                      },
-                                                                     :calId=>"cid2",
-                                                                     :all_day=>false,
-                                                                     :private=>true,
-                                                                     owned: false,
-                                                                     :attendees=>[]},
+                                                                     'calId'=>"cid2",
+                                                                     'all_day'=>false,
+                                                                     'private'=>true,
+                                                                     'owned' => false,
+                                                                     'attendees'=>[]},
                                                                  {
-                                                                     :id=>"eid3",
-                                                                     :summary=>"Event",
-                                                                     :description=>"Notes",
-                                                                     :location=>"Paris",
-                                                                     :start=> {
+                                                                     'id'=>"eid3",
+                                                                     'summary'=>"Event",
+                                                                     'description'=>"Notes",
+                                                                     'location'=>"Paris",
+                                                                     'start'=> {
                                                                          'dateTime' => "2015-01-31T12:00:00Z"
                                                                      },
-                                                                     :end=> {
+                                                                     'end'=> {
                                                                          'dateTime' => "2015-01-31T13:00:00Z"
                                                                      },
-                                                                     :calId=>"cid2",
-                                                                     :all_day=>false,
-                                                                     :private=>false,
-                                                                     owned: true,
-                                                                     :attendees=>[
+                                                                     'calId'=>"cid2",
+                                                                     'all_day'=>false,
+                                                                     'private'=>false,
+                                                                     'owned' => true,
+                                                                     'attendees'=>[
                                                                          {:email=>"john@doe.com", :name=>"john Doe"},
                                                                          {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
                                                                      ]}
@@ -380,32 +380,100 @@ describe "GoogleAccount" do
                                             }
                                       })
                                   )
+        allow(@google_account).to receive_message_chain(:client, :execute).with(({
+            :api_method => "get",
+            :parameters => {
+                :calendarId => "cid1",
+                :eventId => "eid2",
+            },
+            :headers => {"Content-Type" => "application/json"}
+        })).and_return(
+                                      double("response", data: {
+                                          'id' => 'eid2',
+                                          'summary' => "Event",
+                                          'description' => "Notes",
+                                          'location' => "Paris",
+                                          'attendees' => [
+                                              {
+                                                  'email' => 'john@doe.com',
+                                                  'displayName' => "john Doe"
+                                              },
+                                              {
+                                                  'email' => 'mark@zuck.com',
+                                                  'displayName' => "Mark Zuck"
+                                              }
+                                          ],
+                                          'status' => "cancelled",
+                                          'organizer' => {
+                                              'self' => true
+                                          },
+                                          'visibility' => 'default',
+                                          'start' => {
+                                              'dateTime' => "2015-01-31T12:00:00Z"
+                                          },
+                                          'end' => {
+                                              'dateTime' => "2015-01-31T13:00:00Z"
+                                          }
+                                      })
+                                  )
+        allow(@google_account).to receive_message_chain(:client, :execute).with(({
+            :api_method => "get",
+            :parameters => {
+                :calendarId => "cid1",
+                :eventId => "eid3",
+            },
+            :headers => {"Content-Type" => "application/json"}
+        })).and_return(
+                                      double("response", data: {
+                                          'error' => {'message' => 'Not Found'}
+                                      })
+                                  )
         allow(@google_account).to receive_message_chain(:service, :events, :get).and_return "get"
-        end
-      it "should get an event" do
-        expect(@google_account.get_event({
+      end
+      context "Normal event" do
+        it "should get an event" do
+          expect(@google_account.get_event({
                                                calendar_id: "cid1",
                                                event_id: "eid1"
                                            })).to eq({
-                                                         :id=>"eid1",
-                                                         :summary=>"Event",
-                                                         :description=>"Notes",
-                                                         :location=>"Paris",
-                                                         :start=> {
+                                                         'id'=>"eid1",
+                                                         'summary'=>"Event",
+                                                         'description'=>"Notes",
+                                                         'location'=>"Paris",
+                                                         'start'=> {
                                                              'dateTime' => "2015-01-31T12:00:00Z"
                                                          },
-                                                         :end=> {
+                                                         'end'=> {
                                                              'dateTime' => "2015-01-31T13:00:00Z"
                                                          },
-                                                         :calId=>"cid1",
-                                                         :all_day=>false,
-                                                         :private=>false,
-                                                         owned: true,
-                                                         :attendees=>[
+                                                         'calId'=>"cid1",
+                                                         'all_day'=>false,
+                                                         'private'=>false,
+                                                         'owned' => true,
+                                                         'attendees'=>[
                                                              {:email=>"john@doe.com", :name=>"john Doe"},
                                                              {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
                                                          ]})
+        end
       end
+      context "Event deleted" do
+        it "should raise" do
+          expect{@google_account.get_event({
+                                               calendar_id: "cid1",
+                                               event_id: "eid2"
+                                           })}.to raise_error(MultiCalendar::EventNotFoundException)
+        end
+      end
+
+      context "No event" do
+        it "should raise" do
+          expect{@google_account.get_event({
+                                             calendar_id: "cid1",
+                                             event_id: "eid3"
+                                         })}.to raise_error(MultiCalendar::EventNotFoundException)
+        end
+      end
+
     end
 
     describe "#create_event without attendees" do

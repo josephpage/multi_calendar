@@ -80,6 +80,11 @@ module MultiCalendar
       unless @access_token
         @access_token = refresh_access_token
       end
+
+      unless @access_token
+        raise MultiCalendar::AccessExpiredException
+      end
+
       @access_token
     end
 
@@ -166,6 +171,12 @@ module MultiCalendar
       )
 
       ev = JSON.parse(res.body)
+      if ev['error']
+        if ev['error']['code'] == "ErrorItemNotFound"
+          raise MultiCalendar::EventNotFoundException
+        end
+        raise MultiCalendar::UnknownException
+      end
       build_event_hash_from_response(ev, "")
     end
 

@@ -128,6 +128,15 @@ module MultiCalendar
           },
           :headers => {'Content-Type' => 'application/json'})
 
+      if result.data['error']
+        if result.data['error']['message'] == "Not Found"
+          raise MultiCalendar::EventNotFoundException
+        end
+        raise MultiCalendar::UnknownException
+      end
+
+      raise MultiCalendar::EventNotFoundException if result.data['status'] == "cancelled"
+
       build_event_hash_from_response result.data, params[:calendar_id]
     end
 
@@ -233,18 +242,34 @@ module MultiCalendar
       if data['organizer'] && data['organizer']['self']
         owned = true
       end
+
+      start_hash = {
+          'dateTime' => data['start']['dateTime']
+      }
+      end_hash = {
+          'dateTime' => data['end']['dateTime']
+      }
+      unless data['start']['dateTime']
+        start_hash = {
+            'date' => data['start']['date']
+        }
+        end_hash = {
+            'date' => data['end']['date']
+        }
+      end
+      data['start']['dateTime']
       {
-          id: data['id'],
-          summary: "#{data['summary']}",
-          description: "#{data['description']}",
-          location: "#{data['location']}",
-          start: data['start'],
-          end: data['end'],
-          private: data['visibility'] == 'private',
-          all_day: data['start']['dateTime'].nil?,
-          owned: owned,
-          attendees: (data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
-          calId: calendar_id
+          'id' => data['id'],
+          'summary' => "#{data['summary']}",
+          'description' => "#{data['description']}",
+          'location' => "#{data['location']}",
+          'start' => start_hash,
+          'end' => end_hash,
+          'private' => data['visibility'] == 'private',
+          'all_day' => data['start']['dateTime'].nil?,
+          'owned' => owned,
+          'attendees' => (data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
+          'calId' => calendar_id
       }
     end
   end

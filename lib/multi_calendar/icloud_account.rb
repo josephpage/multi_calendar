@@ -114,7 +114,7 @@ module MultiCalendar
       if events.length > 0
         build_event_hash_from_response(events[0], cal.path)
       else
-        nil
+        raise MultiCalendar::EventNotFoundException
       end
     end
 
@@ -220,18 +220,18 @@ module MultiCalendar
 
       if ev.dtstart.class == DateTime
         event_hash['start'] = {
-            dateTime: ev.dtstart.strftime("%FT%T%:z")
+            'dateTime' => ev.dtstart.strftime("%FT%T%:z")
         }
         event_hash['end'] = {
-            dateTime: ev.dtend.strftime("%FT%T%:z")
+            'dateTime' => ev.dtend.strftime("%FT%T%:z")
         }
         event_hash['all_day'] = false
       else
         event_hash['start'] = {
-            date: ev.dtstart.strftime("%F")
+            'date' => ev.dtstart.strftime("%F")
         }
         event_hash['end'] = {
-            date: ev.dtend.strftime("%F")
+            'date' => ev.dtend.strftime("%F")
         }
         event_hash['all_day'] = true
       end

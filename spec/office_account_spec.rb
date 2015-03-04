@@ -129,15 +129,29 @@ describe "OfficeAccount" do
     end
 
     describe "#get_event" do
-      it "should get an event" do
-        stub_request(:get, "https://outlook.office365.com/api/v1.0/me/events/eid1").
-            with(:headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
-            to_return(:status => 200, :body => "{\"Id\":\"eid1\",\"Subject\":\"Cool event #1\",\"Location\":{\"DisplayName\":\"Cool place #1\"},\"BodyPreview\":\"Cool notes #1\",\"Attendees\":[{\"EmailAddress\":{\"Name\":\"Mark Zuck\",\"Address\":\"mark@zuck.com\"},\"StatusResponse\":\"Attending\"},{\"EmailAddress\":{\"Name\":\"John Doe\",\"Address\":\"john@doe.com\"},\"StatusResponse\":\"Declined\"}],\"IsAllDay\":\"1\",\"Start\":\"2015-01-02\",\"End\":\"2015-01-03\"}", :headers => {})
+      context "event exists" do
+        it "should get an event" do
+          stub_request(:get, "https://outlook.office365.com/api/v1.0/me/events/eid1").
+              with(:headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
+              to_return(:status => 200, :body => "{\"Id\":\"eid1\",\"Subject\":\"Cool event #1\",\"Location\":{\"DisplayName\":\"Cool place #1\"},\"BodyPreview\":\"Cool notes #1\",\"Attendees\":[{\"EmailAddress\":{\"Name\":\"Mark Zuck\",\"Address\":\"mark@zuck.com\"},\"StatusResponse\":\"Attending\"},{\"EmailAddress\":{\"Name\":\"John Doe\",\"Address\":\"john@doe.com\"},\"StatusResponse\":\"Declined\"}],\"IsAllDay\":\"1\",\"Start\":\"2015-01-02\",\"End\":\"2015-01-03\"}", :headers => {})
 
-        expect(@office_account.get_event(
-                   calendar_id: "cid1",
-                   event_id: "eid1"
-               )).to eq({"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true, "calId" => "", 'all_day' => true})
+          expect(@office_account.get_event(
+                     calendar_id: "cid1",
+                     event_id: "eid1"
+                 )).to eq({"id"=>"eid1", "summary"=>"Cool event #1", "description"=>"Cool notes #1", "attendees"=>[{:displayName=>"Mark Zuck", :email=>"mark@zuck.com"}, {:displayName=>"John Doe", :email=>"john@doe.com"}], "htmlLink"=>"eid1","location"=>"Cool place #1", "start"=>{:date=>"2015-01-02"}, "end"=>{:date=>"2015-01-03"}, 'private' => false, 'owned' => true, "calId" => "", 'all_day' => true})
+        end
+      end
+      context "event does not exist" do
+        it "raise" do
+          stub_request(:get, "https://outlook.office365.com/api/v1.0/me/events/eid2").
+              with(:headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Authorization'=>'Bearer refreshed_access_token', 'Content-Type'=>'application/json', 'User-Agent'=>'Ruby'}).
+              to_return(:status => 404, :body => "{\"error\":{\"code\":\"ErrorItemNotFound\"}}", :headers => {})
+
+          expect{@office_account.get_event(
+                     calendar_id: "cid1",
+                     event_id: "eid2"
+                 )}.to raise_error(MultiCalendar::EventNotFoundException)
+        end
       end
     end
 

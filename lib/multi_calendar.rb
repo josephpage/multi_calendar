@@ -4,4 +4,12 @@ require "multi_calendar/office_account"
 
 module MultiCalendar
 
+  class EventNotFoundException < Exception
+  end
+
+  class UnknownException < Exception
+  end
+
+  class AccessExpiredException < Exception
+  end
 end
