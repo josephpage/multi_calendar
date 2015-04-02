@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'multi_calendar'
-  s.version     = '0.1.18'
+  s.version     = '0.2.0'
   s.date        = '2015-02-17'
   s.summary     = "Multi Calendar"
   s.description = "A gem to rule them all"
@@ -10,11 +10,15 @@ Gem::Specification.new do |s|
                    "lib/multi_calendar/google_account.rb",
                    "lib/multi_calendar/icloud_account.rb",
                    "lib/multi_calendar/office_account.rb",
+                   "lib/multi_calendar/caldav_account.rb",
                    "lib/multi_calendar/iclouddav.rb",
                    "lib/multi_calendar/iclouddav/calendar.rb",
                    "lib/multi_calendar/iclouddav/client.rb",
                    "lib/multi_calendar/iclouddav/contact.rb",
-                   "lib/multi_calendar/iclouddav/monkey.rb"
+                   "lib/multi_calendar/iclouddav/monkey.rb",
+                   "lib/multi_calendar/caldav.rb",
+                   "lib/multi_calendar/caldav/client.rb",
+                   "lib/multi_calendar/caldav/calendar.rb"
   ]
   s.license     = 'MIT'
   s.homepage    = 'https://github.com/NicolasMarlier/multi_calendar'
