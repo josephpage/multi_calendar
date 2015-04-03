@@ -14,18 +14,19 @@ end
 module ICloud
   class Client
     attr_accessor :caldav_server, :carddav_server, :port, :email, :password,
-      :debug
+      :debug, :development
 
     DEFAULT_CALDAV_SERVER = "p01-caldav.icloud.com"
     DEFAULT_CARDDAV_SERVER = "p01-contacts.icloud.com"
 
-    def initialize(email, password, caldav_server = DEFAULT_CALDAV_SERVER,
+    def initialize(email, password, development=false, caldav_server = DEFAULT_CALDAV_SERVER,
     carddav_server = DEFAULT_CARDDAV_SERVER)
       @email = email
       @password = password
       @caldav_server = caldav_server
       @carddav_server = carddav_server
       @port = 443
+      @development = development
 
       @debug = false
       @_http_cons = {}
@@ -155,9 +156,11 @@ END
         host = Net::HTTP.new(hhost, self.port)
         host.use_ssl = true
 
-        #host.verify_mode = OpenSSL::SSL::VERIFY_NONE # For development
-        host.verify_mode = OpenSSL::SSL::VERIFY_PEER
-
+        if development
+          host.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        else
+          host.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        end
 
         if self.debug
           host.set_debug_output $stdout

@@ -1,16 +1,21 @@
 require "net/https"
-require "rexml/document"
+require "nokogiri"
 
 module Caldav
   class Client
     attr_accessor :caldav_server, :port, :email, :password,
-      :debug
+      :debug, :development
 
-    def initialize(email, password, caldav_server)
+    def initialize(email, password, caldav_server, development=false)
       @email = email
       @password = password
       @caldav_server = caldav_server
       @port = 443
+
+      #@caldav_server = "localhost"
+      #@port = 1080
+
+      @development = development
 
       @debug = false
       @_http_cons = {}
@@ -50,17 +55,21 @@ module Caldav
 
     def fetch_calendar_data(url, start_date=nil, end_date=nil)
 
-      xml_request = <<END
-        <d:sync-collection xmlns:d="DAV:">
-          <d:sync-token/>
-          <d:prop>
-            <d:getcontenttype/>
-          </d:prop>
-        </d:sync-collection>
-END
+      filter_xml = ""
 
       if start_date && end_date
-        xml_request = <<END
+        filter_xml = <<END
+      <C:filter>
+        <C:comp-filter name="VCALENDAR">
+          <C:comp-filter name="VEVENT">
+            <C:time-range start="#{start_date.to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}"
+        end="#{end_date.to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}"/>
+          </C:comp-filter>
+        </C:comp-filter>
+      </C:filter>
+END
+      end
+      xml_request = <<END
         <C:calendar-query xmlns:D="DAV:"
                  xmlns:C="urn:ietf:params:xml:ns:caldav">
      <D:prop>
@@ -84,42 +93,15 @@ END
          </C:comp>
        </C:calendar-data>
      </D:prop>
-     <C:filter>
-       <C:comp-filter name="VCALENDAR">
-         <C:comp-filter name="VEVENT">
-           <C:time-range start="#{start_date.to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}"
-                         end="#{end_date.to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}"/>
-         </C:comp-filter>
-       </C:comp-filter>
-     </C:filter>
+     #{filter_xml}
    </C:calendar-query>
 END
-      end
-
 
       xml = self.report(self.caldav_server, url, { "Depth" => 1 }, xml_request)
 
-      # gather the separate .ics urls for each event in this calendar
-      hrefs = REXML::XPath.each(xml, "//D:href").map do |resp|
-        resp.text
-      end.compact
-
-      # bundle them all in one multiget
-      xml_request_2 = <<END
-        <c:calendar-multiget xmlns:d="DAV:"
-        xmlns:c="urn:ietf:params:xml:ns:caldav">
-          <d:prop>
-            <c:calendar-data />
-          </d:prop>
-          <c:filter>
-            <c:comp-filter name="VCALENDAR" />
-          </c:filter>
-          #{hrefs.map{|h| '<d:href>' << h << '</d:href>'}.join}
-        </c:calendar-multiget>
-END
-      xml = self.report(self.caldav_server, url, { "Depth" => 1 }, xml_request_2)
-
-      REXML::XPath.each(xml, "//C:calendar-data").map{|e| e.text }.join
+      xml.css("C|calendar-data").map do |calendar_data|
+        calendar_data.to_s
+      end.compact.join
     end
 
   private
@@ -132,8 +114,11 @@ END
 
         host.use_ssl = true
 
-        host.verify_mode = OpenSSL::SSL::VERIFY_NONE # For development
-        #host.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        if development
+          host.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        else
+          host.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        end
 
         host.start
 
@@ -160,7 +145,7 @@ END
       if req_type == Net::HTTP::Put || req_type == Net::HTTP::Delete
         res.code
       else
-        REXML::Document.new(res.body)
+        Nokogiri::XML(res.body)
       end
     end
 
@@ -174,7 +159,7 @@ END
 END
       xml = self.propfind(self.caldav_server, "/", { "Depth" => 1 }, request)
 
-      REXML::XPath.first(xml, "//D:current-user-principal/D:href").text
+      xml.css("D|current-user-principal D|href").text
     end
 
     # returns an array of Calendar objects
@@ -192,11 +177,12 @@ END
   </d:prop>
 </d:propfind>
 END
-      xml = self.propfind(self.caldav_server, calendars_url, { "Depth" => 1 }, request)
+      responses = self.propfind(self.caldav_server, calendars_url, { "Depth" => 1 }, request)
 
-      cals = REXML::XPath.each(xml, "//D:multistatus/D:response").map do |cal|
-        if cal
-          path = cal.elements["D:href"].text
+
+      responses.css("D|multistatus D|response").map do |response|
+        if response
+          path = response.css("D|href").first.try(:text)
           if path =~/\.EML\z/
             nil
           else

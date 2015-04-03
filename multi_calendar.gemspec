@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'multi_calendar'
-  s.version     = '0.2.0'
+  s.version     = '0.2.1'
   s.date        = '2015-02-17'
   s.summary     = "Multi Calendar"
   s.description = "A gem to rule them all"
@@ -28,6 +28,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'ri_cal', '~> 0.8.8'
   s.add_dependency 'vcard', '~> 0.2.12'
   s.add_dependency 'actionview'
+  s.add_dependency 'nokogiri'
 
   # development dependencies
   s.add_development_dependency "rake"

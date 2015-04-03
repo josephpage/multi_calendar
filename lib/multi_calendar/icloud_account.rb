@@ -3,7 +3,9 @@ require "multi_calendar/iclouddav"
 module MultiCalendar
   class IcloudAccount
 
-    attr_reader :username, :password
+    attr_accessor :client
+
+    attr_reader :username, :password, :development
 
     # Usage
     #
@@ -59,13 +61,13 @@ module MultiCalendar
       raise "Missing argument password" unless params[:password]
       @username = params[:username]
       @password = params[:password]
+      @development = params[:development].present?
     end
 
     def list_calendars
-      client = ICloud::Client.new(username, password)
       color_id = 0
       result =[]
-      client.calendars.select{|c| c.name &&
+      icloud_client.calendars.select{|c| c.name &&
           c.path &&
           !c.path.end_with?("/calendars/") &&
           !c.path.end_with?("/calendars/tasks/") &&
@@ -81,8 +83,7 @@ module MultiCalendar
     end
 
     def list_events params
-      client = ICloud::Client.new(username, password)
-      cals = client.calendars.select{|c| c.name && c.path}
+      cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals.select!{|cal| params[:calendar_ids].find_index cal.path}
 
 
@@ -105,8 +106,7 @@ module MultiCalendar
     end
 
     def get_event params
-      client = ICloud::Client.new(username, password)
-      cals = client.calendars.select{|c| c.name && c.path}
+      cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
       events = cal.events
@@ -119,24 +119,21 @@ module MultiCalendar
     end
 
     def create_event params
-      client = ICloud::Client.new(username, password)
-      cals = client.calendars.select{|c| c.name && c.path}
+      cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
       cal.create_event event_data_from_params(params)
     end
 
     def update_event params
-      client = ICloud::Client.new(username, password)
-      cals = client.calendars.select{|c| c.name && c.path}
+      cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
       cal.update_event event_data_from_params(params)
     end
 
     def delete_event params
-      client = ICloud::Client.new(username, password)
-      cals = client.calendars.select{|c| c.name && c.path}
+      cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
       cal.delete_event params[:event_id]
@@ -145,8 +142,7 @@ module MultiCalendar
     def credentials_valid?
       credentials_valid = true
       begin
-        client = ICloud::Client.new(username, password)
-        if client.calendars.select{|c| c.name && c.path}.empty?
+        if icloud_client.calendars.select{|c| c.name && c.path}.empty?
           credentials_valid = false
         end
       rescue
@@ -157,6 +153,10 @@ module MultiCalendar
     end
 
     private
+
+    def icloud_client
+      @client ||= ICloud::Client.new(username, password, development)
+    end
 
     def event_data_from_params params
 

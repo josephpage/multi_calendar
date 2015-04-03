@@ -5,7 +5,7 @@ module MultiCalendar
 
     attr_accessor :client
 
-    attr_reader :username, :password, :server
+    attr_reader :username, :password, :server, :development
 
     def initialize params
       raise "Missing argument username" unless params[:username]
@@ -14,6 +14,7 @@ module MultiCalendar
       @username = params[:username]
       @password = params[:password]
       @server = params[:server]
+      @development = params[:development].present?
     end
 
     def list_calendars
@@ -94,8 +95,7 @@ module MultiCalendar
     def credentials_valid?
       credentials_valid = true
       begin
-        client = ICloud::Client.new(username, password)
-        if client.calendars.select{|c| c.name && c.path}.empty?
+        if caldav_client.calendars.select{|c| c.name && c.path}.empty?
           credentials_valid = false
         end
       rescue
@@ -108,7 +108,7 @@ module MultiCalendar
     private
 
     def caldav_client
-      @client ||= Caldav::Client.new(username, password, "jddv-proxy-#{@server}.herokuapp.com")
+      @client ||= Caldav::Client.new(username, password, "jddv-proxy-#{@server}.herokuapp.com", @development)
     end
 
     def event_data_from_params params

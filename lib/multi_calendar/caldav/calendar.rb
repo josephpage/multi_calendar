@@ -63,10 +63,10 @@ DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
 END:VEVENT
 END:VCALENDAR
 END
-      res_code = self.client.put(self.client.caldav_server, "#{self.path}#{params[:event_id]}.ics", {"Content-Type" => "text/calendar", "If-Match" => "*"}, xml_request)
+      res_code = self.client.put(self.client.caldav_server, "#{self.path}#{params[:event_id]}.ics", {"Content-Type" => "text/calendar"}, xml_request)
 
 
-      res_code == "204"
+      res_code == "200"
     end
 
     def create_event params = {}
