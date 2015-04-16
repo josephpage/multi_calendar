@@ -85,7 +85,8 @@ END
 
       randomizator = ""
       res_code = "412"
-      while res_code == "412"
+      count = 0
+      while res_code != "201" && count < 10
         uid = "#{params[:start]}-#{randomizator}"
         xml_request = <<END
 BEGIN:VCALENDAR
@@ -104,6 +105,7 @@ END:VCALENDAR
 END
         res_code = self.client.put(self.client.caldav_server, "#{self.path}#{uid}.ics/", {"Content-Type" => "text/calendar", "If-None-Match" => "*"}, xml_request)
         randomizator = (0...10).map { (0..9).to_a[rand(10)]}.join
+        count += 1
       end
       if res_code == "201"
         uid
