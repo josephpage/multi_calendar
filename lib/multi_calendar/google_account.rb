@@ -107,7 +107,7 @@ module MultiCalendar
         if calendar_id == email
           time_zone = result.data['timeZone']
         end
-        total_result += result.data['items'].map { |item|
+        total_result += filter_items(result.data['items']).map { |item|
           build_event_hash_from_response(item, calendar_id)
         }
       end
@@ -199,6 +199,13 @@ module MultiCalendar
     end
 
     private
+
+    def filter_items items
+      items.select{|item|
+        me = item['attendees'].select{|attendee| attendee['self'] == true}.try(:first)
+        !me || me['responseStatus'] != "declined"
+      }
+    end
 
     def generate_attendees_array attendees
       result = (attendees || []).map{|att|
