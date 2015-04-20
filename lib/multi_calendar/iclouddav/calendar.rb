@@ -15,8 +15,8 @@ module ICloud
       @ical ||= RiCal.parse_string(self.ical_data).first
     end
 
-    def delete_event event_id
-      res_code = self.client.delete(self.client.caldav_server, "#{self.path}#{event_id}.ics/", {}, "")
+    def delete_event event_url
+      res_code = self.client.delete(self.client.caldav_server, "#{event_url}", {}, "")
       res_code == "204"
     end
 
@@ -56,7 +56,7 @@ DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
 END:VEVENT
 END:VCALENDAR
 END
-      res_code = self.client.put(self.client.caldav_server, "#{self.path}#{params[:event_id]}.ics/", {"Content-Type" => "text/calendar", "If-Match" => "*"}, xml_request)
+      res_code = self.client.put(self.client.caldav_server, "#{params[:event_url]}", {"Content-Type" => "text/calendar", "If-Match" => "*"}, xml_request)
 
 
       res_code == "204"

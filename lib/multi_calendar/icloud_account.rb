@@ -114,22 +114,28 @@ module MultiCalendar
       cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
-      events = cal.events
-      events = events.select{|ev| ev.uid == params[:event_id]}
 
-      if events.length > 0
-        build_event_hash_from_response(events[0][:event], events[0][:url], cal.path)
+      event = cal.get_event(params[:event_url])
+      if event
+        build_event_hash_from_response(event[:event], event[:url], cal.path)
       else
         raise MultiCalendar::EventNotFoundException
       end
-
-      #event = cal.get_event(params[:event_url])
-      #if event
-      #  build_event_hash_from_response(event[:event], event[:url], cal.path)
-      #else
-      #  raise MultiCalendar::EventNotFoundException
-      #end
     end
+
+    #def get_event_old params
+    #  cals = icloud_client.calendars.select{|c| c.name && c.path}
+    #  cals = cals.select{|c| c.path == params[:calendar_id]}
+    #  cal = cals.first
+    #  events = cal.events
+    #  events = events.select{|event_hash| event_hash[:event].uid == params[:event_id]}
+    #
+    #  if events.length > 0
+    #    build_event_hash_from_response(events[0][:event], events[0][:url], cal.path)
+    #  else
+    #    raise MultiCalendar::EventNotFoundException
+    #  end
+    #end
 
     def create_event params
       cals = icloud_client.calendars.select{|c| c.name && c.path}
@@ -149,7 +155,7 @@ module MultiCalendar
       cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
-      cal.delete_event params[:event_id]
+      cal.delete_event params[:event_url]
     end
 
     def credentials_valid?
@@ -184,6 +190,7 @@ module MultiCalendar
 
       {
           event_id: params[:event_id],
+          event_url: params[:event_url],
           summary: "#{params[:summary]}",
           start: start_param,
           end: end_param,

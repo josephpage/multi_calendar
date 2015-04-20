@@ -216,6 +216,7 @@ describe "IcloudAccount" do
 
           expect(@icloud_account.update_event(
                      event_id: '20150109T090000Z-7016265254',
+                     event_url: '/207958951/calendars/20150109T090000Z-7016265254.ics/',
                      calendar_id: '/207958951/calendars/',
                      start_date: DateTime.new(2015, 1, 1, 12, 0),
                      end_date: DateTime.new(2015, 1, 1, 13, 0),
@@ -233,6 +234,7 @@ describe "IcloudAccount" do
 
           expect(@icloud_account.update_event(
                      event_id: '20150109T090000Z-7016265254',
+                     event_url: '/207958951/calendars/20150109T090000Z-7016265254.ics/',
                      calendar_id: '/207958951/calendars/',
                      start_date: DateTime.new(2015, 1, 1, 12, 0),
                      end_date: DateTime.new(2015, 1, 1, 13, 0),
@@ -250,6 +252,7 @@ describe "IcloudAccount" do
 
           expect(@icloud_account.update_event(
                      event_id: '20150109T090000Z-7016265254',
+                     event_url: '/207958951/calendars/20150109T090000Z-7016265254.ics/',
                      calendar_id: '/207958951/calendars/',
                      start_date: DateTime.new(2015, 1, 1),
                      end_date: DateTime.new(2015, 1, 1),
@@ -269,6 +272,7 @@ describe "IcloudAccount" do
 
           expect(@icloud_account.delete_event(
                      event_id: '20150109T090000Z-7016265254',
+                     event_url: '/207958951/calendars/20150109T090000Z-7016265254.ics/',
                      calendar_id: '/207958951/calendars/'
                  )).to eq(true)
         end
