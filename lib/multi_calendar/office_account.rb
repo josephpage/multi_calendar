@@ -188,7 +188,11 @@ module MultiCalendar
       )
 
       if res.code == "201"
-        JSON.parse(res.body)['Id']
+        {
+            event_id: JSON.parse(res.body)['Id'],
+            calendar_id: params[:calendar_id],
+            event_url: ""
+        }
       else
         nil
       end

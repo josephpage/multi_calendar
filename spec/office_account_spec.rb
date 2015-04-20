@@ -171,7 +171,11 @@ describe "OfficeAccount" do
             description: "created by Multi-Calendar gem",
             attendees: [{email: "you@yourdomain.com"}],
             location: "Paris"
-        )).to eq("eid1")
+        )).to eq({
+                              event_id: "eid1",
+                              calendar_id: 'cid1',
+                              event_url: ''
+                          })
       end
     end
 
@@ -192,7 +196,11 @@ describe "OfficeAccount" do
                    description: "created by Multi-Calendar gem",
                    attendees: [{email: "you@yourdomain.com"}],
                    location: "Paris"
-               )).to eq("eid1")
+               )).to eq({
+                                    event_id: "eid1",
+                                    calendar_id: 'cid1',
+                                    event_url: ''
+                                })
       end
     end
 

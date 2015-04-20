@@ -151,7 +151,11 @@ module MultiCalendar
           :body_object => build_event_data_from_hash(params),
           :headers => {'Content-Type' => 'application/json'})
 
-      result.data.id
+      {
+          event_id: result.data.id,
+          calendar_id: params[:calendar_id],
+          event_url: ""
+      }
     end
 
     def update_event params

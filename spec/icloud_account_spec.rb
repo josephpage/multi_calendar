@@ -158,7 +158,11 @@ describe "IcloudAccount" do
                      description: "created by Multi-Calendar gem",
                      attendees: [{email: "you@yourdomain.com"}],
                      location: "Paris"
-                 )).to eq("20150101T120000Z-")
+                 )).to eq({
+                                        event_id: "20150101T120000Z-",
+                                        calendar_id: '/207958951/calendars/',
+                                        event_url: '/207958951/calendars/20150101T120000Z-.ics/'
+                                    })
         end
 
         it "should create event without attendees" do
@@ -174,7 +178,11 @@ describe "IcloudAccount" do
                      description: "created by Multi-Calendar gem",
                      attendees: [],
                      location: "Paris"
-                 )).to eq("20150101T120000Z-")
+                 )).to eq({
+                                        event_id: "20150101T120000Z-",
+                                        calendar_id: '/207958951/calendars/',
+                                        event_url: '/207958951/calendars/20150101T120000Z-.ics/'
+                                    })
         end
 
         it "should create event all day" do
@@ -191,7 +199,11 @@ describe "IcloudAccount" do
                      description: "created by Multi-Calendar gem",
                      attendees: [],
                      location: "Paris"
-                 )).to eq("20150101-")
+                 )).to eq({
+                                        event_id: "20150101-",
+                                        calendar_id: '/207958951/calendars/',
+                                        event_url: '/207958951/calendars/20150101-.ics/'
+                                    })
         end
       end
 
