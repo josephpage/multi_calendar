@@ -116,20 +116,14 @@ END
 END
       end
 
-
       xml = self.report(self.caldav_server, url, { "Depth" => 1 }, xml_request)
 
-      # gather the separate .ics urls for each event in this calendar
-      hrefs = []
-      REXML::XPath.each(xml, "//response") do |resp|
-        href = resp.elements["href"].text
-        if href.present?
-          hrefs.push href
-        end
-      end
+      hrefs = xml.css("response").map do |resp|
+        resp.css("href").first.text
+      end.select(&:present?)
 
-      # bundle them all in one multiget
-      xml = self.report(self.caldav_server, url, { "Depth" => 1 }, <<END
+
+      xml_request_2  = <<END
         <c:calendar-multiget xmlns:d="DAV:"
         xmlns:c="urn:ietf:params:xml:ns:caldav">
           <d:prop>
@@ -141,12 +135,23 @@ END
           #{hrefs.map{|h| '<d:href>' << h << '</d:href>'}.join}
         </c:calendar-multiget>
 END
-        )
+      xml_2 = self.report(self.caldav_server, url, { "Depth" => 1 }, xml_request_2)
 
-      REXML::XPath.each(xml,
-        "//multistatus/response/propstat/prop/calendar-data").map{|e| e.text }.
-        join
+      xml_2.css("response").map do |response|
+        url = response.css("href").text
+        event_data = response.css("prop *").text
+        if url && event_data
+          {
+              url: url,
+              event_data: event_data
+          }
+          else
+            nil
+        end
+      end.compact
     end
+
+
 
   private
     def http_fetch(req_type, hhost, url, headers = {}, data = nil, xml_process=true)
@@ -195,7 +200,7 @@ END
         res.code
       else
         if xml_process
-          REXML::Document.new(res.body)
+          Nokogiri::XML(res.body)
         else
           res.body
         end
@@ -203,12 +208,18 @@ END
     end
 
     def fetch_principal
-      xml = self.propfind(self.caldav_server, "/", { "Depth" => 1 },
-        '<d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal />' <<
-        '</d:prop></d:propfind>')
+      request = '<d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal />' <<
+          '</d:prop></d:propfind>'
 
-      REXML::XPath.first(xml,
-        "//response/propstat/prop/current-user-principal/href").text
+      xml = self.propfind(self.caldav_server, "/", { "Depth" => 1 }, request)
+
+      result = xml.css("current-user-principal href").text
+
+      raise "No principal found" unless result.present?
+
+      result
+
+      #REXML::XPath.first(xml, "//response/propstat/prop/current-user-principal/href").text
     end
 
     # returns an array of Calendar objects
@@ -223,60 +234,37 @@ END
         '<d:propfind xmlns:d="DAV:"><d:prop><d:displayname/></d:prop>' <<
         '</d:propfind>')
 
-      cals = REXML::XPath.each(xml, "//multistatus/response").map do |cal|
+
+      xml.css("multistatus response").map do |cal|
         if cal
-          path = cal.elements["href"].text
+          path = cal.css("href").first.try(:text)
           begin
-            if cal.elements['propstat'].elements['prop'].elements['displayname']
-              name = cal.elements['propstat'].elements['prop'].elements['displayname'].text
-              Calendar.new(self, path, name)
+            if cal.css("propstat prop displayname").length > 0
+              name = cal.css("propstat prop displayname").first.text
+              if name.present? && path.present?
+                Calendar.new(self, path, name)
+              end
             end
           rescue NoMethodError
           end
         end
-      end
+      end.compact
 
-      cals.compact
+      #cals = REXML::XPath.each(xml, "//multistatus/response").map do |cal|
+      #  if cal
+      #    path = cal.elements["href"].text
+      #    begin
+      #      if cal.elements['propstat'].elements['prop'].elements['displayname']
+      #        name = cal.elements['propstat'].elements['prop'].elements['displayname'].text
+      #        Calendar.new(self, path, name)
+      #      end
+      #    rescue NoMethodError
+      #    end
+      #  end
+      #end
+      #
+      #cals.compact
     end
 
-    # returns an array of Contact objects
-    def fetch_contacts
-      carddav_home = "/#{self.principal.split("/")[1]}/carddavhome/card/"
-
-      xml = self.propfind(self.carddav_server, carddav_home, { "Depth" => 1 },
-        '<d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/></d:prop>' <<
-        '</d:propfind>')
-
-      # gather the separate .vcf urls for each non-addressbook object in this
-      # calendar (looking for a text/vcard contenttype would be preferable, but
-      # icloud doesn't show that for all cards)
-      cards = []
-      REXML::XPath.each(xml, "//multistatus/response") do |card|
-        if !card.elements["propstat"].elements["prop"].
-        elements["resourcetype"].text.to_s.match(/addressbook/)
-          cards.push card.elements["href"].text
-        end
-      end
-
-      # fetch all vcard data in one multiget
-      xml = self.report(self.carddav_server, carddav_home, { "Depth" => 1 },
-        <<END
-        <c:addressbook-multiget xmlns:d="DAV:"
-          xmlns:c="urn:ietf:params:xml:ns:carddav">
-          <d:prop>
-            <c:address-data />
-          </d:prop>
-          #{cards.map{|h| '<d:href>' << h << '</d:href>'}.join}
-        </c:addressbook-multiget>
-END
-        )
-
-      # map non-empty vcards into Contact objects
-      REXML::XPath.each(xml,
-        "//multistatus/response/propstat/prop/address-data").
-        map{|vc| vc.text }.
-        reject{|t| !t }.
-        map{|t| Contact.new(self, t) }
-    end
   end
 end

@@ -90,15 +90,20 @@ module MultiCalendar
       events = []
       cals.each do |cal|
         cal_events = cal.events({start_date: params[:start_date], end_date: params[:end_date]})
-        cal_events.map!{ |ev|
-          if ev.recurs?
-            ev.occurrences({starting: params[:start_date], before: params[:end_date]})
+        cal_events.map!{ |event_hash|
+          if event_hash[:event].recurs?
+            event_hash[:event].occurrences({starting: params[:start_date], before: params[:end_date]}).map{|ev|
+              {
+                  url: event_hash[:url],
+                  event: ev
+              }
+            }
           else
-            ev
+            event_hash
           end
         }.flatten!
-        cal_events.each do |ev|
-          events << build_event_hash_from_response(ev, cal.path)
+        cal_events.each do |event_hash|
+          events << build_event_hash_from_response(event_hash[:event], event_hash[:url], cal.path)
         end
       end
 
@@ -109,10 +114,9 @@ module MultiCalendar
       cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
-      events = cal.events
-      events = events.select{|ev| ev.uid == params[:event_id]}
-      if events.length > 0
-        build_event_hash_from_response(events[0], cal.path)
+      event = cal.get_event(params[:event_url])
+      if event
+        build_event_hash_from_response(event[:event], event[:url], cal.path)
       else
         raise MultiCalendar::EventNotFoundException
       end
@@ -180,7 +184,7 @@ module MultiCalendar
       }
     end
 
-    def build_event_hash_from_response ev, calPath
+    def build_event_hash_from_response ev, event_url, calPath
       attendees = ev.attendee_property.map{|att|
         {
             displayName: "#{att.params['NAME']}".gsub("\\\"", "\""),
@@ -212,7 +216,7 @@ module MultiCalendar
           'location' => "#{ev.location}".gsub("\\\"", "\""),
           'description' => "#{ev.description}".gsub("\\\"", "\""),
           'attendees' => attendees,
-          'htmlLink' => "#{ev.uid}",
+          'htmlLink' => "#{event_url}",
           'calId' => calPath,
           'private' => false,
           'owned' => true

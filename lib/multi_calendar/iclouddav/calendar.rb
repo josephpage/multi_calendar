@@ -153,14 +153,49 @@ END
     end
 
     def events params={}
-      if params[:start_date] || params[:end_date]
-        start_date = params[:start_date] || DateTime.now - 100.years
-        end_date = params[:end_date] || DateTime.now + 100.years
+      start_date = params[:start_date]
+      end_date = params[:end_date]
 
-        RiCal.parse_string(self.ical_data(start_date, end_date)).first.events
-      else
-        self.ical.events
+      if start_date || end_date
+        start_date ||= DateTime.now - 100.years
+        end_date ||= DateTime.now + 100.years
       end
+
+      self.client.fetch_calendar_data(self.path, start_date, end_date).map{|event_hash|
+        {
+            url: event_hash[:url],
+            event: RiCal.parse_string(event_hash[:event_data]).first.events.first
+        }
+      }
+    end
+
+    def get_event href
+      xml_request  = <<END
+        <c:calendar-multiget xmlns:d="DAV:"
+        xmlns:c="urn:ietf:params:xml:ns:caldav">
+          <d:prop>
+            <c:calendar-data />
+          </d:prop>
+          <c:filter>
+            <c:comp-filter name="VCALENDAR" />
+          </c:filter>
+          <d:href>#{href}</d:href>
+        </c:calendar-multiget>
+END
+      xml = client.report(client.caldav_server, self.path, { "Depth" => 1 }, xml_request)
+
+      xml.css("response").map do |response|
+        url = response.css("href").text
+        event_data = response.css("prop *").text
+        if url && event_data
+          {
+              url: url,
+              event: RiCal.parse_string(event_data).first.events.first
+          }
+        else
+          nil
+        end
+      end.compact.try(:first)
     end
 
     def to_remind
