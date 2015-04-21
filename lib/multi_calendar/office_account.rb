@@ -273,10 +273,16 @@ module MultiCalendar
         result
       }.compact
 
+      begin
+        notes = Nokogiri::HTML(ev['Body']['Content']).text
+      rescue
+        notes = ev['BodyPreview']
+      end
+
       event_hash = {
           'id' => "#{ev['Id']}",
           'summary' => "#{ev['Subject']}",
-          'description' => "#{ev['BodyPreview']}",
+          'description' => "#{notes}",
           'attendees' => attendees,
           'htmlLink' => "#{ev['Id']}",
           'calId' => calendar_id,
