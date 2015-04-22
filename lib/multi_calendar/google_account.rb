@@ -230,11 +230,20 @@ module MultiCalendar
     end
 
     def build_event_data_from_hash params
-      start_param = { dateTime: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z") }
-      end_param = { dateTime: params[:end_date].strftime("%Y-%m-%dT%H:%M:%S%Z") }
+      start_param = {
+            dateTime: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
+      }
+      end_param = {
+          dateTime: params[:end_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
+      }
+
       if params[:all_day]
-        start_param = { date: params[:start_date].strftime("%Y-%m-%d") }
-        end_param = { date: params[:end_date].strftime("%Y-%m-%d") }
+        start_param = {
+            date: params[:start_date].strftime("%Y-%m-%d")
+        }
+        end_param = {
+            date: params[:end_date].strftime("%Y-%m-%d")
+        }
       end
 
       {
@@ -268,7 +277,7 @@ module MultiCalendar
             'date' => data['end']['date']
         }
       end
-      data['start']['dateTime']
+      p data
       {
           'id' => data['id'],
           'summary' => "#{data['summary']}",
@@ -280,7 +289,9 @@ module MultiCalendar
           'all_day' => data['start']['dateTime'].nil?,
           'owned' => owned,
           'attendees' => (data['attendees'] || []).map { |att| {email: att['email'], name: att['displayName']} },
-          'calId' => calendar_id
+          'calId' => calendar_id,
+          'recurringEventId' => data['recurringEventId'],
+          'recurrence' => (data['recurrence'] || []).map{|rrule| rrule.gsub("RRULE:", "")}
       }
     end
   end

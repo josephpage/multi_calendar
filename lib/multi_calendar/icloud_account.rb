@@ -90,18 +90,27 @@ module MultiCalendar
       events = []
       cals.each do |cal|
         cal_events = cal.events({start_date: params[:start_date], end_date: params[:end_date]})
-        cal_events.map!{ |event_hash|
+        cal_events = cal_events.map{ |event_hash|
           if event_hash[:event].recurs?
             event_hash[:event].occurrences({starting: params[:start_date], before: params[:end_date]}).map{|ev|
               {
                   url: event_hash[:url],
-                  event: ev
+                  event: ev,
+                  occurrence: true
               }
             }
           else
             event_hash
           end
-        }.flatten!
+        }.flatten.group_by{|event_hash|
+          event_hash[:event].recurrence_id || event_hash[:url]
+        }.map{|k, event_hashes|
+          if event_hashes.length == 1
+            event_hashes[0]
+          else
+            event_hashes.sort_by{|event_hash| (event_hash[:occurrence])?1:0}.first
+          end
+        }
         cal_events.each do |event_hash|
           events << build_event_hash_from_response(event_hash[:event], event_hash[:url], cal.path)
         end
@@ -115,9 +124,11 @@ module MultiCalendar
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
 
-      event = cal.get_event(params[:event_url])
-      if event
-        build_event_hash_from_response(event[:event], event[:url], cal.path)
+      events = cal.get_event(params[:event_url])
+      if events && events.length > 0
+        events.map{|event|
+          build_event_hash_from_response(event[:event], event[:url], cal.path)
+        }.first
       else
         raise MultiCalendar::EventNotFoundException
       end

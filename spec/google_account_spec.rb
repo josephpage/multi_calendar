@@ -216,7 +216,9 @@ describe "GoogleAccount" do
                                                         },
                                                         'end' => {
                                                             'dateTime' => "2015-01-31T13:00:00Z"
-                                                        }
+                                                        },
+                                                        'recurringEventId' => nil,
+                                                        'recurrence' => []
                                                     }]
                                       })
                                   )
@@ -273,7 +275,9 @@ describe "GoogleAccount" do
                                               },
                                               'end' => {
                                                   'dateTime' => "2015-01-31T13:00:00Z"
-                                              }
+                                              },
+                                              'recurringEventId' => nil,
+                                              'recurrence' => []
                                           }]
                                       })
                                   )
@@ -303,7 +307,10 @@ describe "GoogleAccount" do
                                                                      'attendees'=>[
                                                                          {:email=>"john@doe.com", :name=>"john Doe"},
                                                                          {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
-                                                                     ]},
+                                                                     ],
+                                                                     'recurringEventId' => nil,
+                                                                     'recurrence' => []
+                                                                 },
                                                                  {
                                                                      'id'=>"eid2",
                                                                      'summary'=>"Event",
@@ -319,7 +326,10 @@ describe "GoogleAccount" do
                                                                      'all_day'=>false,
                                                                      'private'=>true,
                                                                      'owned' => false,
-                                                                     'attendees'=>[]},
+                                                                     'attendees'=>[],
+                                                                     'recurringEventId' => nil,
+                                                                     'recurrence' => []
+                                                                 },
                                                                  {
                                                                      'id'=>"eid3",
                                                                      'summary'=>"Event",
@@ -338,7 +348,10 @@ describe "GoogleAccount" do
                                                                      'attendees'=>[
                                                                          {:email=>"john@doe.com", :name=>"john Doe"},
                                                                          {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
-                                                                     ]}
+                                                                     ],
+                                                                     'recurringEventId' => nil,
+                                                                     'recurrence' => []
+                                                                 }
                                                      ])
       end
     end
@@ -377,7 +390,9 @@ describe "GoogleAccount" do
                                             },
                                             'end' => {
                                                 'dateTime' => "2015-01-31T13:00:00Z"
-                                            }
+                                            },
+                                            'recurringEventId' => nil,
+                                            'recurrence' => []
                                       })
                                   )
         allow(@google_account).to receive_message_chain(:client, :execute).with(({
@@ -413,7 +428,9 @@ describe "GoogleAccount" do
                                           },
                                           'end' => {
                                               'dateTime' => "2015-01-31T13:00:00Z"
-                                          }
+                                          },
+                                          'recurringEventId' => nil,
+                                          'recurrence' => []
                                       })
                                   )
         allow(@google_account).to receive_message_chain(:client, :execute).with(({
@@ -453,7 +470,10 @@ describe "GoogleAccount" do
                                                          'attendees'=>[
                                                              {:email=>"john@doe.com", :name=>"john Doe"},
                                                              {:email=>"mark@zuck.com", :name=>"Mark Zuck"}
-                                                         ]})
+                                                         ],
+                                                         'recurringEventId' => nil,
+                                                         'recurrence' => []
+                                                     })
         end
       end
       context "Event deleted" do

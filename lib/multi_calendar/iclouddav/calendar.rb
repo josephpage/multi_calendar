@@ -82,7 +82,6 @@ ATTENDEE;CN=Organizer:mailto:#{self.client.email}
 END
       end
 
-
       randomizator = ""
       res_code = "412"
       count = 0
@@ -120,44 +119,6 @@ END
       end
     end
 
-    def get_event event_id
-      xml_request = <<END
-<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-  <D:prop>
-    <D:getetag/>
-    <C:calendar-data>
-      <C:comp name="VCALENDAR">
-        <C:prop name="VERSION"/>
-        <C:comp name="VEVENT">
-          <C:prop name="SUMMARY"/>
-          <C:prop name="UID"/>
-          <C:prop name="DTSTART"/>
-          <C:prop name="DTEND"/>
-          <C:prop name="DURATION"/>
-          <C:prop name="RRULE"/>
-          <C:prop name="RDATE"/>
-          <C:prop name="EXRULE"/>
-          <C:prop name="EXDATE"/>
-          <C:prop name="RECURRENCE-ID"/>
-        </C:comp>
-        <C:comp name="VTIMEZONE"/>
-      </C:comp>
-    </C:calendar-data>
-  </D:prop>
-  <C:filter>
-    <C:comp-filter name="VCALENDAR">
-      <C:comp-filter name="VEVENT">
-        <C:prop-filter name="SUMMARY">
-          <C:text-match>TTT – Runners Billin789g</C:text-match>
-        </C:prop-filter>
-      </C:comp-filter>
-    </C:comp-filter>
-  </C:filter>
-</C:calendar-query>
-END
-      self.client.report_without_xml_parsing(self.client.caldav_server, self.path, { "Depth" => 1 }, xml_request)
-    end
-
     def events params={}
       start_date = params[:start_date]
       end_date = params[:end_date]
@@ -168,11 +129,13 @@ END
       end
 
       self.client.fetch_calendar_data(self.path, start_date, end_date).map{|event_hash|
-        {
-            url: event_hash[:url],
-            event: RiCal.parse_string(event_hash[:event_data]).first.events.first
+        RiCal.parse_string(event_hash[:event_data]).first.events.map{|event|
+          {
+              url: event_hash[:url],
+              event: event
+          }
         }
-      }
+      }.flatten
     end
 
     def get_event href
@@ -194,14 +157,16 @@ END
         url = response.css("href").text
         event_data = response.css("prop *").text
         if url && event_data
-          {
-              url: url,
-              event: RiCal.parse_string(event_data).first.events.first
-          }
+          RiCal.parse_string(event_data).first.events.map do |event|
+            {
+                url: url,
+                event: event
+            }
+          end
         else
           nil
         end
-      end.compact.try(:first)
+      end.flatten.compact
     end
 
     def to_remind
