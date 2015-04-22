@@ -256,7 +256,7 @@ module MultiCalendar
           description: params[:description]
       }
       if params[:recurrence].present?
-        result[:recurrence] = params[:recurrence]
+        result[:recurrence] = params[:recurrence].map{|rrule| "RRULE:#{rrule}"}
       end
 
       result
