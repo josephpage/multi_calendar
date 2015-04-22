@@ -231,11 +231,16 @@ module MultiCalendar
 
     def build_event_data_from_hash params
       start_param = {
-            dateTime: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
+          dateTime: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
       }
       end_param = {
           dateTime: params[:end_date].strftime("%Y-%m-%dT%H:%M:%S%Z")
       }
+
+      if params[:start_timezone]
+        start_param[:timeZone] = params[:start_timezone]
+        end_param[:timeZone] = params[:end_timezone] || params[:start_timezone]
+      end
 
       if params[:all_day]
         start_param = {
