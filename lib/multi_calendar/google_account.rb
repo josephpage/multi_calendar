@@ -246,7 +246,7 @@ module MultiCalendar
         }
       end
 
-      {
+      result = {
           start: start_param,
           end: end_param,
           summary: params[:summary],
@@ -255,6 +255,11 @@ module MultiCalendar
           attendees: generate_attendees_array(params[:attendees]),
           description: params[:description]
       }
+      if params[:recurrence].present?
+        result[:recurrence] = params[:recurrence]
+      end
+
+      result
     end
 
     def build_event_hash_from_response data, calendar_id
@@ -277,7 +282,7 @@ module MultiCalendar
             'date' => data['end']['date']
         }
       end
-      p data
+
       {
           'id' => data['id'],
           'summary' => "#{data['summary']}",
