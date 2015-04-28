@@ -274,7 +274,7 @@ module MultiCalendar
       }.compact
 
       begin
-        notes = Nokogiri::HTML(ev['Body']['Content']).text
+        notes = Nokogiri::HTML(ev['Body']['Content']).css("body").text
       rescue
         notes = ev['BodyPreview']
       end
