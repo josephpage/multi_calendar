@@ -1,0 +1,219 @@
+require "viewpoint"
+
+module MultiCalendar
+  class ExchangeAccount
+
+    include ActionView::Helpers::TextHelper
+    include ERB::Util
+    include Viewpoint::EWS
+
+    attr_reader :username, :password, :ews_url, :client
+
+    def initialize params
+      #params[:ews_url] ||= "https://outlook.office365.com/EWS/Exchange.asmx"
+      raise "Missing argument username" unless params[:username]
+      raise "Missing argument password" unless params[:password]
+      raise "Missing argument ews_url" unless params[:ews_url]
+      @username = params[:username]
+      @password = params[:password]
+      @ews_url = params[:ews_url]
+    end
+
+    def list_calendars
+      all_folders = client.folders root: :root, traversal: :deep
+      calendar_folders = all_folders.select do |f|
+        f.class == Viewpoint::EWS::Types::CalendarFolder
+      end
+
+      color_id = 0
+      result = []
+
+      calendar_folders.each do |calendar_folder|
+        color_id += 1
+
+        result << {
+            id: calendar_folder.id,
+            summary: calendar_folder.name,
+            colorId: color_id
+        }
+      end
+
+      result
+    end
+
+    def list_events params
+      items = []
+
+      params[:calendar_ids].each do |calendar_id|
+
+        calendar_folder = client.get_folder(calendar_id)
+        client.find_items({
+                              :parent_folder_ids=>[
+                                  {
+                                      :id=>calendar_folder.id,
+                                      :change_key=>calendar_folder.change_key
+                                  }
+                              ],
+                              :traversal=>"Shallow",
+                              :item_shape=>{:base_shape=>"Default"},
+                              :calendar_view=>{
+                                  :max_entries_returned=>2000,
+                                  :start_date=>params[:start_date],
+                                  :end_date=>params[:end_date]
+                              }
+                          }).each do |calendar_item|
+          items << build_event_hash_from_response(calendar_item, calendar_id)
+        end
+      end
+
+      items
+    end
+
+    def get_event params
+      begin
+        calendar_item = client.get_item params[:event_id]
+        build_event_hash_from_response(calendar_item, params[:calendar_id])
+      rescue
+          raise MultiCalendar::EventNotFoundException
+      end
+    end
+
+    def create_event params
+      calendar_folder = client.get_folder(params[:calendar_id])
+      calendar_item = calendar_folder.create_item(
+          format_event_data(params),
+          {
+              :send_meeting_invitations => "SendOnlyToAll"
+          }
+      )
+
+      {
+          event_id: calendar_item.id,
+          calendar_id: params[:calendar_id],
+          event_url: ""
+      }
+    end
+
+    def update_event params
+      calendar_item = client.get_item(params[:event_id])
+      new_attributes = format_event_data(params)
+
+      calendar_item.update_item!(new_attributes, {
+                                       send_meeting_invitations_or_cancellations: "SendOnlyToAll"
+                                 })
+
+      true
+    end
+
+    def delete_event params
+      calendar_item = client.get_item(params[:event_id])
+      calendar_item.delete!(:hard, {
+          send_meeting_cancellations: "SendOnlyToAll"
+      })
+
+      true
+    end
+
+    private
+
+    def format_text_as_html text
+      h(simple_format(text))
+    end
+
+    def format_event_data params
+      start_date = params[:start_date].to_time.utc
+      end_date = params[:end_date].to_time.utc
+      if params[:all_day]
+        utc_offset = 0
+        if params[:utc_offset]
+          utc_offset = params[:utc_offset].to_i
+        end
+        if utc_offset > 0
+          start_date = DateTime.parse(params[:start_date].strftime("%F"))
+          end_date = DateTime.parse(params[:end_date].strftime("%F")) - 1
+        elsif utc_offset < 0
+          start_date = DateTime.parse(params[:start_date].strftime("%F")) + 1
+          end_date = DateTime.parse(params[:end_date].strftime("%F"))
+        else
+          start_date = DateTime.parse(params[:start_date].strftime("%F"))
+          end_date = DateTime.parse(params[:end_date].strftime("%F"))
+        end
+      end
+      {
+          :subject => params[:summary],
+          :body => params[:description],
+          :start => start_date,
+          :end => end_date,
+          :is_all_day_event => (params[:all_day])?"true":"false",
+          :location => params[:location],
+          :required_attendees => (params[:attendees]|| []).map{|att|
+            {
+                attendee: {
+                  mailbox: {
+                      email_address: att[:email]
+                  }
+                }
+            }
+          }
+      }
+    end
+
+    def build_event_hash_from_response calendar_item, calendar_id
+      attendees = calendar_item.required_attendees.map{|att|
+        {
+              displayName: "",
+              email: "#{att.email}"
+        }
+      }
+
+
+      notes = nil
+      begin
+        if calendar_item.body_type == "html"
+          notes = Nokogiri::HTML(calendar_item.body).css("body").text
+        end
+      rescue
+
+      end
+      notes ||= calendar_item.body
+
+      event_hash = {
+          'id' => calendar_item.id,
+          'summary' => calendar_item.subject,
+          'description' => "#{notes}",
+          'attendees' => attendees,
+          'htmlLink' => calendar_item.id,
+          'calId' => calendar_id,
+          'private' => false,
+          'owned' => true,
+          'location' => calendar_item.location
+      }
+
+
+      if calendar_item.all_day?
+        event_hash['start'] = {
+            date: calendar_item.start.strftime("%F")
+        }
+        event_hash['end'] = {
+            date: calendar_item.end.strftime("%F")
+        }
+        event_hash['all_day'] = true
+      else
+        event_hash['start'] = {
+            dateTime: calendar_item.start.strftime("%FT%T%:z")
+        }
+        event_hash['end'] = {
+            dateTime: calendar_item.end.strftime("%FT%T%:z")
+        }
+        event_hash['all_day'] = false
+      end
+
+
+      event_hash
+    end
+
+    def client
+      @client ||= Viewpoint::EWSClient.new(self.ews_url, self.username, self.password, http_opts: {ssl_verify_mode: 0})
+    end
+  end
+end
