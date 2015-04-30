@@ -80,12 +80,11 @@ module MultiCalendar
 
     def create_event params
       calendar_folder = client.get_folder(params[:calendar_id])
-      calendar_item = calendar_folder.create_item(
-          format_event_data(params, "create"),
-          {
-              :send_meeting_invitations => "SendOnlyToAll"
-          }
-      )
+      req = format_event_data(params, "create")
+      p req
+      calendar_item = calendar_folder.create_item(req, {
+          :send_meeting_invitations => "SendOnlyToAll"
+      })
 
       {
           event_id: calendar_item.id,
