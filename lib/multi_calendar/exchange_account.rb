@@ -81,7 +81,7 @@ module MultiCalendar
     def create_event params
       calendar_folder = client.get_folder(params[:calendar_id])
       calendar_item = calendar_folder.create_item(
-          format_event_data(params),
+          format_event_data(params, "create"),
           {
               :send_meeting_invitations => "SendOnlyToAll"
           }
@@ -96,7 +96,7 @@ module MultiCalendar
 
     def update_event params
       calendar_item = client.get_item(params[:event_id])
-      new_attributes = format_event_data(params)
+      new_attributes = format_event_data(params, "update")
 
       calendar_item.update_item!(new_attributes, {
                                        send_meeting_invitations_or_cancellations: "SendOnlyToAll"
@@ -120,7 +120,7 @@ module MultiCalendar
       h(simple_format(text))
     end
 
-    def format_event_data params
+    def format_event_data params, mode="create"
       start_date = params[:start_date].to_time.utc
       end_date = params[:end_date].to_time.utc
       if params[:all_day]
@@ -139,23 +139,26 @@ module MultiCalendar
           end_date = DateTime.parse(params[:end_date].strftime("%F"))
         end
       end
-      {
+      result = {
           :subject => params[:summary],
           :body => params[:description],
           :start => start_date,
           :end => end_date,
           :is_all_day_event => (params[:all_day])?"true":"false",
-          :location => params[:location],
-          :required_attendees => (params[:attendees]|| []).map{|att|
-            {
-                attendee: {
+          :location => params[:location]
+      }
+      if mode != "create" || (params[:attendees] && params[:attendees].length > 0)
+        result[:required_attendees] = (params[:attendees]|| []).map { |att|
+          {
+              attendee: {
                   mailbox: {
                       email_address: att[:email]
                   }
-                }
-            }
+              }
           }
-      }
+        }
+      end
+      result
     end
 
     def build_event_hash_from_response calendar_item, calendar_id
