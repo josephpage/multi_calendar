@@ -83,7 +83,7 @@ module MultiCalendar
       req = format_event_data(params, "create")
       p req
       calendar_item = calendar_folder.create_item(req, {
-          :send_meeting_invitations => "SendOnlyToAll"
+          :send_meeting_invitations => "SendToAllAndSaveCopy"
       })
 
       {
@@ -98,7 +98,7 @@ module MultiCalendar
       new_attributes = format_event_data(params, "update")
 
       calendar_item.update_item!(new_attributes, {
-                                       send_meeting_invitations_or_cancellations: "SendOnlyToAll"
+                                       send_meeting_invitations_or_cancellations: "SendToAllAndSaveCopy"
                                  })
 
       true
