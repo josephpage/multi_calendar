@@ -129,7 +129,8 @@ END
       end
 
       self.client.fetch_calendar_data(self.path, start_date, end_date).map{|event_hash|
-        RiCal.parse_string(event_hash[:event_data]).first.events.map{|event|
+        event_data = event_hash[:event_data].gsub(/\"(.*)\;(.*)\"/) { "#{$1}#{$2}" }
+        RiCal.parse_string(event_data).first.events.map{|event|
           {
               url: event_hash[:url],
               event: event
@@ -157,6 +158,8 @@ END
         url = response.css("href").text
         event_data = response.css("prop *").text
         if url && event_data
+          event_data = event_data.gsub(/\"(.*)\;(.*)\"/) { "#{$1}#{$2}" }
+
           RiCal.parse_string(event_data).first.events.map do |event|
             {
                 url: url,
