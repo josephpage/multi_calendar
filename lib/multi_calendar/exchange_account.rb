@@ -79,12 +79,16 @@ module MultiCalendar
     end
 
     def create_event params
+      Viewpoint::EWS::Connection.set_proxy_url ENV['PROXIMO_URL']
+
       calendar_folder = client.get_folder(params[:calendar_id])
       req = format_event_data(params, "create")
       p req
       calendar_item = calendar_folder.create_item(req, {
           :send_meeting_invitations => "SendToAllAndSaveCopy"
       })
+
+      Viewpoint::EWS::Connection.reset_proxy_url
 
       {
           event_id: calendar_item.id,
@@ -94,13 +98,14 @@ module MultiCalendar
     end
 
     def update_event params
+      Viewpoint::EWS::Connection.set_proxy_url ENV['PROXIMO_URL']
       calendar_item = client.get_item(params[:event_id])
       new_attributes = format_event_data(params, "update")
 
       calendar_item.update_item!(new_attributes, {
                                        send_meeting_invitations_or_cancellations: "SendToAllAndSaveCopy"
                                  })
-
+      Viewpoint::EWS::Connection.reset_proxy_url
       true
     end
 
