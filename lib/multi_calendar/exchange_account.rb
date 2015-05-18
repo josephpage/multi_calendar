@@ -151,17 +151,22 @@ module MultiCalendar
           :is_all_day_event => (params[:all_day])?"true":"false",
           :location => params[:location]
       }
-      if mode != "create" || (params[:attendees] && params[:attendees].length > 0)
-        result[:required_attendees] = (params[:attendees]|| []).map { |att|
-          {
-              attendee: {
-                  mailbox: {
-                      email_address: att[:email]
-                  }
-              }
-          }
+      attendees = params[:attendees] || []
+      unless attendees.map{|att| att[:email]}.include? self.username
+        attendees << {
+            email: self.username
         }
       end
+
+      result[:required_attendees] = attendees.map { |att|
+        {
+            attendee: {
+                mailbox: {
+                    email_address: att[:email]
+                }
+            }
+        }
+      }
       result
     end
 
