@@ -142,6 +142,8 @@ module MultiCalendar
           start_date = DateTime.parse(params[:start_date].strftime("%F"))
           end_date = DateTime.parse(params[:end_date].strftime("%F"))
         end
+
+        end_date -= 1
       end
       result = {
           :subject => params[:summary],
@@ -207,7 +209,7 @@ module MultiCalendar
             date: calendar_item.start.strftime("%F")
         }
         event_hash['end'] = {
-            date: calendar_item.end.strftime("%F")
+            date: (calendar_item.end + 1).strftime("%F")
         }
         event_hash['all_day'] = true
       else
