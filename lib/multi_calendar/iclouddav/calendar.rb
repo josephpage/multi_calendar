@@ -24,6 +24,15 @@ module ICloud
       raise "Missing start param" unless params[:start]
       raise "Missing end param" unless params[:end]
 
+      start_timezone_data = ""
+      end_timezone_data   = ""
+      timezone_data = ""
+      if params[:start_timezone]
+        params[:end_timezone] ||= params[:start_timezone]
+        timezone_data = get_timezone_data([params[:start_timezone], params[:end_timezone]]) + "\n"
+        start_timezone_data = ";TZID=#{params[:start_timezone]}"
+        end_timezone_data = ";TZID=#{params[:end_timezone]}"
+      end
 
       attendees_str = ""
       attendees_str += (params[:attendees] || []).select{|attendee|
@@ -45,10 +54,10 @@ END
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN
-BEGIN:VEVENT
+#{timezone_data}BEGIN:VEVENT
 UID:#{params[:event_id]}
-DTSTART:#{params[:start]}
-DTEND:#{params[:end]}
+DTSTART#{start_timezone_data}:#{params[:start]}
+DTEND#{end_timezone_data}:#{params[:end]}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
 DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
@@ -65,6 +74,16 @@ END
     def create_event params = {}
       raise "Missing start param" unless params[:start]
       raise "Missing end param" unless params[:end]
+
+      start_timezone_data = ""
+      end_timezone_data   = ""
+      timezone_data = ""
+      if params[:start_timezone]
+        params[:end_timezone] ||= params[:start_timezone]
+        timezone_data = get_timezone_data([params[:start_timezone], params[:end_timezone]]) + "\n"
+        start_timezone_data = ";TZID=#{params[:start_timezone]}"
+        end_timezone_data = ";TZID=#{params[:end_timezone]}"
+      end
 
       attendees_str = ""
       attendees_str += (params[:attendees] || []).select{|attendee|
@@ -91,10 +110,10 @@ END
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN
-BEGIN:VEVENT
+#{timezone_data}BEGIN:VEVENT
 UID:#{uid}
-DTSTART:#{params[:start]}
-DTEND:#{params[:end]}
+DTSTART#{start_timezone_data}:#{params[:start]}
+DTEND#{end_timezone_data}:#{params[:end]}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
 DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
@@ -318,7 +337,18 @@ END
         @ical_data = ical_data_to_set
       end
 
-      end
+    end
+
+    def get_timezone_data timezones
+      all_timezones = YAML.load_file(File.join(__dir__, "timezones.yml"))
+      timezones.uniq.map{|timezone_id|
+        timezone_data = all_timezones[timezone_id]
+        raise "Unknown timezone: '#{timezone_id}'" unless timezone_data
+        timezone_data
+      }.join("\n")
+    end
 
   end
+
+
 end

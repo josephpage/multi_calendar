@@ -189,14 +189,16 @@ module MultiCalendar
     end
 
     def event_data_from_params params
-
-      params[:start_date] = params[:start_date].to_time.utc.to_datetime
-      params[:end_date] = params[:end_date].to_time.utc.to_datetime
-      start_param = params[:start_date].strftime("%Y%m%dT%H%M%SZ")
-      end_param = params[:end_date].strftime("%Y%m%dT%H%M%SZ")
       if params[:all_day]
         start_param = params[:start_date].strftime("%Y%m%d")
-        end_param = params[:end_date].strftime("%Y%m%d")
+        end_param   = params[:end_date].strftime("%Y%m%d")
+        start_timezone = nil
+        end_timezone = nil
+      else
+        start_param = params[:start_date].strftime("%Y%m%dT%H%M%S")
+        end_param   = params[:end_date].strftime("%Y%m%dT%H%M%S")
+        start_timezone = params[:start_timezone]
+        end_timezone = params[:end_timezone]
       end
 
       {
@@ -205,6 +207,8 @@ module MultiCalendar
           summary: "#{params[:summary]}",
           start: start_param,
           end: end_param,
+          start_timezone: start_timezone,
+          end_timezone: end_timezone,
           attendees: (params[:attendees] || []).map{|att| att[:email]},
           description: "#{params[:description]}",
           location: "#{params[:location]}"
