@@ -98,7 +98,8 @@ module MultiCalendar
                 calendarId: calendar_id,
                 timeMin: params[:start_date].strftime("%Y-%m-%dT%H:%M:%S%Z"),
                 timeMax: params[:end_date].strftime("%Y-%m-%dT%H:%M:%S%Z"),
-                singleEvents: true
+                singleEvents: true,
+                maxResults: 2500
             },
             :headers => {'Content-Type' => 'application/json'})
 
