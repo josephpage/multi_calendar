@@ -86,7 +86,6 @@ module MultiCalendar
       cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals.select!{|cal| params[:calendar_ids].find_index cal.path}
 
-
       events = []
       cals.each do |cal|
         cal_events = cal.events({start_date: params[:start_date], end_date: params[:end_date]})
