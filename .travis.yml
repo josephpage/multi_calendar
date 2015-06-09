@@ -4,4 +4,4 @@ rvm:
  - "1.9.2"
  - "1.9.3"
  - rbx
-script: bundle expec rspec spec
+script: bundle exec rspec spec
