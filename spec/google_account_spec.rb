@@ -186,7 +186,8 @@ describe "GoogleAccount" do
                 :calendarId => "cid1",
                 :timeMin => "2015-01-01T00:00:00+00:00",
                 :timeMax => "2015-01-30T00:00:00+00:00",
-                :singleEvents => true
+                :singleEvents => true,
+                :maxResults => 2500
             },
             :headers => {"Content-Type" => "application/json"}
         })).and_return(
@@ -229,7 +230,8 @@ describe "GoogleAccount" do
                 :calendarId => "cid2",
                 :timeMin => "2015-01-01T00:00:00+00:00",
                 :timeMax => "2015-01-30T00:00:00+00:00",
-                :singleEvents => true
+                :singleEvents => true,
+                :maxResults => 2500
             },
             :headers => {"Content-Type" => "application/json"}
         })).and_return(
