@@ -55,14 +55,14 @@ module MultiCalendar
                                   }
                               ],
                               :traversal=>"Shallow",
-                              :item_shape=>{:base_shape=>"Default"},
+                              :item_shape=>{:base_shape=>"AllProperties"},
                               :calendar_view=>{
                                   :max_entries_returned=>2000,
                                   :start_date=>params[:start_date],
                                   :end_date=>params[:end_date]
                               }
                           }).each do |calendar_item|
-          items << build_event_hash_from_response(calendar_item, calendar_id)
+          items << build_event_hash_from_response(calendar_item, calendar_id, false)
         end
       end
 
@@ -154,11 +154,11 @@ module MultiCalendar
           :location => params[:location]
       }
       attendees = params[:attendees] || []
-      unless attendees.map{|att| att[:email]}.include? self.username
-        attendees << {
-            email: self.username
-        }
-      end
+      #unless attendees.map{|att| att[:email]}.include? self.username
+      #  attendees << {
+      #      email: self.username
+      #  }
+      #end
 
       result[:required_attendees] = attendees.map { |att|
         {
@@ -172,24 +172,31 @@ module MultiCalendar
       result
     end
 
-    def build_event_hash_from_response calendar_item, calendar_id
-      attendees = calendar_item.required_attendees.map{|att|
-        {
-              displayName: "",
-              email: "#{att.email}"
+    def build_event_hash_from_response calendar_item, calendar_id, full=true
+      if full
+        organizer_email = (calendar_item.organizer)?(calendar_item.organizer.email):nil
+        attendees = (calendar_item.required_attendees.map(&:email) + [organizer_email]).compact.uniq.map{|email|
+          {
+                displayName: "",
+                email: "#{email}"
+          }
         }
-      }
+      else
+        attendees = []
+      end
 
 
       notes = nil
-      begin
-        if calendar_item.body_type == "html"
-          notes = Nokogiri::HTML(calendar_item.body).css("body").text
-        end
-      rescue
+      if full
+        begin
+          if calendar_item.body_type == "html" || calendar_item.body_type == "HTML"
+            notes = Nokogiri::HTML(calendar_item.body).css("body").text
+          end
+        rescue
 
+        end
+        notes ||= calendar_item.body
       end
-      notes ||= calendar_item.body
 
       event_hash = {
           'id' => calendar_item.id,
@@ -200,7 +207,7 @@ module MultiCalendar
           'calId' => calendar_id,
           'private' => false,
           'owned' => true,
-          'location' => calendar_item.location
+          'location' => (full)?(calendar_item.location):nil
       }
 
 
@@ -220,6 +227,10 @@ module MultiCalendar
             dateTime: calendar_item.end.strftime("%FT%T%:z")
         }
         event_hash['all_day'] = false
+      end
+
+      unless full
+        event_hash['preview'] = true
       end
 
 
