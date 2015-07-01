@@ -7,7 +7,7 @@ module MultiCalendar
     include ERB::Util
     include Viewpoint::EWS
 
-    attr_reader :username, :password, :ews_url, :client
+    attr_reader :username, :password, :ews_url, :client, :server_version, :debug
 
     def initialize params
       #params[:ews_url] ||= "https://outlook.office365.com/EWS/Exchange.asmx"
@@ -17,6 +17,9 @@ module MultiCalendar
       @username = params[:username]
       @password = params[:password]
       @ews_url = params[:ews_url]
+
+      @server_version = params[:server_version]
+      @debug = params[:debug]
     end
 
     def list_calendars
@@ -238,7 +241,14 @@ module MultiCalendar
     end
 
     def client
-      @client ||= Viewpoint::EWSClient.new(self.ews_url, self.username, self.password, http_opts: {ssl_verify_mode: 0})
+      opts = {}
+      if self.server_version
+        opts[:server_version] = self.server_version
+      end
+      if self.debug
+        opts[:http_opts] = {ssl_verify_mode: 0}
+      end
+      @client ||= Viewpoint::EWSClient.new(self.ews_url, self.username, self.password, opts)
     end
   end
 end
