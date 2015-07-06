@@ -108,7 +108,7 @@ module MultiCalendar
     private
 
     def caldav_client
-      @client ||= Caldav::Client.new(username, password, "jddv-proxy-#{@server}.herokuapp.com", @development)
+      @client ||= Caldav::Client.new(username, password, @server, @development)
     end
 
     def event_data_from_params params
