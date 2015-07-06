@@ -104,7 +104,7 @@ END
       end.compact.join
     end
 
-  private
+  #private
     def http_fetch(req_type, hhost, url, headers = {}, data = nil, xml_process=true)
       if !(host = @_http_cons["#{hhost}:#{self.port}"])
         host = Net::HTTP.new(hhost, self.port)
@@ -158,8 +158,9 @@ END
 </d:propfind>
 END
       xml = self.propfind(self.caldav_server, "/", { "Depth" => 1 }, request)
+      #modification with http://www.nokogiri.org/tutorials/searching_a_xml_html_document.html  and http://sabre.io/dav/building-a-caldav-client/
+      xml.xpath("//d:current-user-principal //d:href /text()").first.text    #check why I need first
 
-      xml.css("D|current-user-principal D|href").text
     end
 
     # returns an array of Calendar objects
@@ -168,31 +169,55 @@ END
       # seem to support that, so we skip that lookup and hard-code to
       # "/[principal user id]/calendars/" which is what calendar-home-set would
       # probably return anyway
-
-      calendars_url = "#{self.principal.gsub("principals/", "")}/calendar"
       request = <<END
-<d:propfind xmlns:d="DAV:">
+<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
   <d:prop>
-    <d:displayname/>
+     <c:calendar-home-set />
   </d:prop>
 </d:propfind>
 END
-      responses = self.propfind(self.caldav_server, calendars_url, { "Depth" => 1 }, request)
+      responses = self.propfind(self.caldav_server, principal, { "Depth" => 1 }, request)
+      home_sets = responses.xpath("//cal:calendar-home-set //d:href /text()").map(&:text)
 
-
-      responses.css("D|multistatus D|response").map do |response|
-        if response
-          path = response.css("D|href").first.try(:text)
-          if path =~/\.EML\z/
-            nil
-          else
-            Caldav::Calendar.new(self, path, path.split("/").last)
-          end
-        else
-          nil
+      request = <<END
+      <d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/" xmlns:c="urn:ietf:params:xml:ns:caldav">
+      <d:prop>
+      <d:resourcetype />
+     <d:displayname />
+                      <cs:getctag />
+     <c:supported-calendar-component-set />
+                                  </d:prop>
+</d:propfind>
+END
+      calendars_array = []
+      home_sets.each  do |hs|
+        responses = self.propfind(self.caldav_server, hs, { "Depth" => 1 }, request)
+        responses.xpath("//cal:supported-calendar-component-set //cal:comp[@name='VEVENT']").each do |c|
+          r = c.xpath('./ancestor::d:response[1]')
+          name = r.xpath(".//d:displayname /text()").text
+          p name
+          path = r.xpath(".//d:href /text()").text
+          p path
+          calendars_array << Caldav::Calendar.new(self, path, name)
         end
-      end.compact
-    end
+      end
+
+      calendars_array
+
+
+    #   responses.css("D|multistatus D|response").map do |response|
+    #     if response
+    #       path = response.css("D|href").first.try(:text)
+    #       if path =~/\.EML\z/
+    #         nil
+    #       else
+    #         Caldav::Calendar.new(self, path, path.split("/").last)
+    #       end
+    #     else
+    #       nil
+    #     end
+    #   end.compact
+     end
 
 
   end
