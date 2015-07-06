@@ -104,7 +104,7 @@ END
       end.compact.join
     end
 
-  #private
+  private
     def http_fetch(req_type, hhost, url, headers = {}, data = nil, xml_process=true)
       if !(host = @_http_cons["#{hhost}:#{self.port}"])
         host = Net::HTTP.new(hhost, self.port)
