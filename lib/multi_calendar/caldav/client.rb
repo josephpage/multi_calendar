@@ -9,7 +9,8 @@ module Caldav
     def initialize(email, password, caldav_server, development=false)
       @email = email
       @password = password
-      @caldav_server = caldav_server
+      @caldav_server = caldav_server.split("/").first
+      @prefix_url =  (caldav_server.split("/",2).try(:[],1) || "")
       @port = 443
 
       #@caldav_server = "localhost"
@@ -29,77 +30,78 @@ module Caldav
       @calendars ||= fetch_calendars
     end
 
-    def get(host, url, headers = {})
-      http_fetch(Net::HTTP::Get, host, url, headers)
+    def get(url="/", headers = {})
+      http_fetch(Net::HTTP::Get, @caldav_server, @prefix_url+url, headers)
     end
 
-    def propfind(host, url, headers = {}, xml)
-      http_fetch(Net::HTTP::Propfind, host, url, headers, xml)
+    def propfind( url="/", headers = {}, xml)
+      http_fetch(Net::HTTP::Propfind, @caldav_server, @prefix_url+url, headers, xml)
     end
 
-    def report(host, url, headers = {}, xml)
-      http_fetch(Net::HTTP::Report, host, url, headers, xml)
+    def report( url="/", headers = {}, xml)
+      http_fetch(Net::HTTP::Report, @caldav_server, @prefix_url+url, headers, xml)
     end
 
-    def report_without_xml_parsing(host, url, headers = {}, xml)
-      http_fetch(Net::HTTP::Report, host, url, headers, xml, false)
+    def report_without_xml_parsing(url="/", headers = {}, xml)
+      http_fetch(Net::HTTP::Report, @caldav_server, @prefix_url+url, headers, xml, false)
     end
 
-    def put(host, url, headers = {}, xml)
-      http_fetch(Net::HTTP::Put, host, url, headers, xml)
+    def put( url="/", headers = {}, xml)
+      http_fetch(Net::HTTP::Put, @prefix_url, @prefix_url+url, headers, xml)
     end
 
-    def delete(host, url, headers = {}, xml)
-      http_fetch(Net::HTTP::Delete, host, url, headers, xml)
+    def delete( url="/", headers = {}, xml)
+      http_fetch(Net::HTTP::Delete, @prefix_url, @prefix_url+url, headers, xml)
     end
 
     def fetch_calendar_data(url, start_date=nil, end_date=nil)
 
-      filter_xml = ""
+      filter_xml = '<c:comp-filter name="VEVENT" />'
 
       if start_date && end_date
         filter_xml = <<END
-      <C:filter>
-        <C:comp-filter name="VCALENDAR">
-          <C:comp-filter name="VEVENT">
-            <C:time-range start="#{start_date.to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}"
+        <c:comp-filter name="VEVENT">
+            <c:time-range start="#{start_date.to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}"
         end="#{end_date.to_time.utc.to_datetime.strftime("%Y%m%dT%H%M%SZ")}"/>
-          </C:comp-filter>
-        </C:comp-filter>
-      </C:filter>
+        </c:comp-filter>
 END
       end
       xml_request = <<END
-        <C:calendar-query xmlns:D="DAV:"
-                 xmlns:C="urn:ietf:params:xml:ns:caldav">
-     <D:prop>
-       <D:getetag/>
-       <C:calendar-data>
-         <C:comp name="VCALENDAR">
-           <C:prop name="VERSION"/>
-           <C:comp name="VEVENT">
-             <C:prop name="SUMMARY"/>
-             <C:prop name="UID"/>
-             <C:prop name="DTSTART"/>
-             <C:prop name="DTEND"/>
-             <C:prop name="DURATION"/>
-             <C:prop name="RRULE"/>
-             <C:prop name="RDATE"/>
-             <C:prop name="EXRULE"/>
-             <C:prop name="EXDATE"/>
-             <C:prop name="RECURRENCE-ID"/>
-           </C:comp>
-           <C:comp name="VTIMEZONE"/>
-         </C:comp>
-       </C:calendar-data>
-     </D:prop>
-     #{filter_xml}
-   </C:calendar-query>
+      <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop>
+          <d:getetag />
+          <c:calendar-data >
+            <c:comp name="VCALENDAR">
+             <c:prop name="VERSION"/>
+             <c:comp name="VEVENT">
+               <c:prop name="SUMMARY"/>
+               <c:prop name="UID"/>
+               <c:prop name="DTSTART"/>
+               <c:prop name="DTEND"/>
+               <c:prop name="DURATION"/>
+               <c:prop name="RRULE"/>
+               <c:prop name="RDATE"/>
+               <c:prop name="EXRULE"/>
+               <c:prop name="EXDATE"/>
+               <c:prop name="RECURRENCE-ID"/>
+             </c:comp>
+             <c:comp name="VTIMEZONE"/>
+           </c:comp>
+          </c:calendar-data>
+        </d:prop>
+        <c:filter>
+          <c:comp-filter name="VCALENDAR">
+
+              #{filter_xml}
+
+          </c:comp-filter>
+        </c:filter>
+      </c:calendar-query>
 END
 
-      xml = self.report(self.caldav_server, url, { "Depth" => 1 }, xml_request)
 
-      xml.css("C|calendar-data").map do |calendar_data|
+      xml = self.report(url, { "Depth" => 1 }, xml_request)
+      xml.xpath("//cal:calendar-data").map do |calendar_data|
         calendar_data.to_s
       end.compact.join
     end
@@ -157,7 +159,7 @@ END
   </d:prop>
 </d:propfind>
 END
-      xml = self.propfind(self.caldav_server, "/", { "Depth" => 1 }, request)
+      xml = self.propfind( "/", { "Depth" => 1 }, request)
       #modification with http://www.nokogiri.org/tutorials/searching_a_xml_html_document.html  and http://sabre.io/dav/building-a-caldav-client/
       xml.xpath("//d:current-user-principal //d:href /text()").first.text    #check why I need first
 
@@ -176,7 +178,7 @@ END
   </d:prop>
 </d:propfind>
 END
-      responses = self.propfind(self.caldav_server, principal, { "Depth" => 1 }, request)
+      responses = self.propfind( principal, { "Depth" => 1 }, request)
       home_sets = responses.xpath("//cal:calendar-home-set //d:href /text()").map(&:text)
 
       request = <<END
@@ -191,7 +193,7 @@ END
 END
       calendars_array = []
       home_sets.each  do |hs|
-        responses = self.propfind(self.caldav_server, hs, { "Depth" => 1 }, request)
+        responses = self.propfind( hs, { "Depth" => 1 }, request)
         responses.xpath("//cal:supported-calendar-component-set //cal:comp[@name='VEVENT']").each do |c|
           r = c.xpath('./ancestor::d:response[1]')
           name = r.xpath(".//d:displayname /text()").text
