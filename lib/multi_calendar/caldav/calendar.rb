@@ -63,7 +63,7 @@ DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
 END:VEVENT
 END:VCALENDAR
 END
-      res_code = self.client.put(self.client.caldav_server, "#{self.path}#{params[:event_id]}.ics", {"Content-Type" => "text/calendar"}, xml_request)
+      res_code = self.client.put("#{self.path}#{params[:event_id]}.ics", {"Content-Type" => "text/calendar"}, xml_request)
 
 
       res_code == "200"
@@ -109,7 +109,7 @@ DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
 END:VEVENT
 END:VCALENDAR
 END
-        res_code = self.client.put(self.client.caldav_server, "#{self.path}#{uid}.ics", {"Content-Type" => "text/calendar", "If-None-Match" => "*"}, xml_request)
+        res_code = self.client.put("#{self.path}#{uid}.ics", {"Content-Type" => "text/calendar", "If-None-Match" => "*"}, xml_request)
         randomizator = (0...10).map { (0..9).to_a[rand(10)]}.join
       end
       if res_code == "201"
