@@ -47,11 +47,11 @@ module Caldav
     end
 
     def put( url="/", headers = {}, xml)
-      http_fetch(Net::HTTP::Put, @prefix_url, @prefix_url+url, headers, xml)
+      http_fetch(Net::HTTP::Put,@caldav_server, @prefix_url+url, headers, xml)
     end
 
     def delete( url="/", headers = {}, xml)
-      http_fetch(Net::HTTP::Delete, @prefix_url, @prefix_url+url, headers, xml)
+      http_fetch(Net::HTTP::Delete,@caldav_server, @prefix_url+url, headers, xml)
     end
 
     def fetch_calendar_data(url, start_date=nil, end_date=nil)
