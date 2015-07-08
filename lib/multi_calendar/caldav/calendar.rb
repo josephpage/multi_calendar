@@ -73,6 +73,16 @@ END
       raise "Missing start param" unless params[:start]
       raise "Missing end param" unless params[:end]
 
+      start_timezone_data = ""
+      end_timezone_data   = ""
+      timezone_data = ""
+      if params[:start_timezone]
+        params[:end_timezone] ||= params[:start_timezone]
+        timezone_data = get_timezone_data([params[:start_timezone], params[:end_timezone]]) + "\n"
+        start_timezone_data = ";TZID=#{params[:start_timezone]}"
+        end_timezone_data = ";TZID=#{params[:end_timezone]}"
+      end
+
       attendees_str = ""
       attendees_str += (params[:attendees] || []).select{|attendee|
         attendee != self.client.email
@@ -98,10 +108,10 @@ END
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN
-BEGIN:VEVENT
+#{timezone_data}BEGIN:VEVENT
 UID:#{uid}
-DTSTART:#{params[:start]}
-DTEND:#{params[:end]}
+DTSTART#{start_timezone_data}:#{params[:start]}
+DTEND#{end_timezone_data}:#{params[:end]}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
 DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
@@ -109,11 +119,16 @@ DESCRIPTION:#{params[:description].gsub(/\n/, "\\n")}
 END:VEVENT
 END:VCALENDAR
 END
-        res_code = self.client.put("#{self.path}#{uid}.ics", {"Content-Type" => "text/calendar", "If-None-Match" => "*"}, xml_request)
+        event_url = "#{self.path}#{uid}.ics"
+        res_code = self.client.put(event_url, {"Content-Type" => "text/calendar", "If-None-Match" => "*"}, xml_request)
         randomizator = (0...10).map { (0..9).to_a[rand(10)]}.join
       end
       if res_code == "201"
-        uid
+        {
+            event_id: uid,
+            calendar_id: self.path,
+            event_url: event_url
+        }
       else
         nil
       end
