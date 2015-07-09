@@ -15,6 +15,11 @@ module Caldav
       @ical ||= RiCal.parse_string(self.ical_data).first
     end
 
+    def delete_event event_url
+      res_code = self.client.delete("#{event_url}", {}, "")
+      res_code == "204"
+    end
+
     def events params={}
       if params[:start_date] || params[:end_date]
         start_date = params[:start_date] || DateTime.now - 100.years
@@ -30,6 +35,15 @@ module Caldav
       raise "Missing start param" unless params[:start]
       raise "Missing end param" unless params[:end]
 
+      start_timezone_data = ""
+      end_timezone_data   = ""
+      timezone_data = ""
+      if params[:start_timezone]
+        params[:end_timezone] ||= params[:start_timezone]
+        timezone_data = get_timezone_data([params[:start_timezone], params[:end_timezone]]) + "\n"
+        start_timezone_data = ";TZID=#{params[:start_timezone]}"
+        end_timezone_data = ";TZID=#{params[:end_timezone]}"
+      end
 
       attendees_str = ""
       attendees_str += (params[:attendees] || []).select{|attendee|
@@ -53,8 +67,8 @@ VERSION:2.0
 PRODID:-//CALENDARSERVER.ORG//NONSGML Version 1//EN
 BEGIN:VEVENT
 UID:#{params[:event_id]}
-DTSTART:#{params[:start]}
-DTEND:#{params[:end]}
+DTSTART#{start_timezone_data}:#{params[:start]}
+DTEND#{end_timezone_data}:#{params[:end]}
 SUMMARY:#{params[:summary]}
 LOCATION:#{params[:location]}
 SEQUENCE:0
@@ -66,7 +80,7 @@ END
       res_code = self.client.put("#{self.path}#{params[:event_id]}.ics", {"Content-Type" => "text/calendar"}, xml_request)
 
 
-      res_code == "200"
+      res_code == "204"
     end
 
     def create_event params = {}
@@ -162,6 +176,15 @@ END
         @ical_data = ical_data_to_set
       end
 
+    end
+
+    def get_timezone_data timezones
+      all_timezones = YAML.load_file(File.join(__dir__, "timezones.yml"))
+      timezones.uniq.map{|timezone_id|
+        timezone_data = all_timezones[timezone_id]
+        raise "Unknown timezone: '#{timezone_id}'" unless timezone_data
+        timezone_data
+      }.join("\n")
     end
   end
 end
