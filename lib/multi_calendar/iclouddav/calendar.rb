@@ -12,7 +12,7 @@ module ICloud
     end
 
     def ical
-      @ical ||= RiCal.parse_string(self.ical_data).first
+      @ical ||= Calendar.rical_parse_string(self.ical_data).first
     end
 
     def delete_event event_url
@@ -149,7 +149,7 @@ END
 
       self.client.fetch_calendar_data(self.path, start_date, end_date).map{|event_hash|
         event_data = event_hash[:event_data].gsub(/\"(.*)\;(.*)\"/) { "#{$1}#{$2}" }
-        RiCal.parse_string(event_data).first.events.map{|event|
+        Calendar.rical_parse_string(event_data).first.events.map{|event|
           {
               url: event_hash[:url],
               event: event
@@ -179,7 +179,7 @@ END
         if url && event_data
           event_data = event_data.gsub(/\"(.*)\;(.*)\"/) { "#{$1}#{$2}" }
 
-          RiCal.parse_string(event_data).first.events.map do |event|
+          Calendar.rical_parse_string(event_data).first.events.map do |event|
             {
                 url: url,
                 event: event
@@ -346,6 +346,10 @@ END
         raise "Unknown timezone: '#{timezone_id}'" unless timezone_data
         timezone_data
       }.join("\n")
+    end
+
+    def self.rical_parse_string str
+      RiCal.parse_string(str.gsub("X-ADDRESS=;", ""))
     end
 
   end
