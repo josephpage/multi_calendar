@@ -1,25 +1,32 @@
 require "net/https"
 require "nokogiri"
 
+module Net
+  class HTTP
+    class Report < HTTPRequest
+      METHOD = "REPORT"
+      REQUEST_HAS_BODY = true
+      RESPONSE_HAS_BODY = true
+    end
+  end
+end
+
 module Caldav
   class Client
     attr_accessor :caldav_server, :port, :email, :password,
-      :debug, :development
+      :debug, :development, :is_icloud
 
-    def initialize(email, password, caldav_server, development=false)
+    def initialize(email, password, caldav_server, development=false, is_icloud=false)
       @email = email
       @password = password
-      @caldav_server = caldav_server.split("/").first
-      @prefix_url =  (caldav_server.split("/",2).try(:[],1) || "")
+      @caldav_server = caldav_server
       @port = 443
-
-      #@caldav_server = "localhost"
-      #@port = 1080
 
       @development = development
 
       @debug = false
       @_http_cons = {}
+      @is_icloud = is_icloud
     end
 
     def principal
@@ -30,28 +37,28 @@ module Caldav
       @calendars ||= fetch_calendars
     end
 
-    def get(url="/", headers = {})
-      http_fetch(Net::HTTP::Get, @caldav_server, @prefix_url+url, headers)
+    def get(host, url, headers = {})
+      http_fetch(Net::HTTP::Get, host, url, headers)
     end
 
-    def propfind( url="/", headers = {}, xml)
-      http_fetch(Net::HTTP::Propfind, @caldav_server, @prefix_url+url, headers, xml)
+    def propfind(host, url, headers = {}, xml)
+      http_fetch(Net::HTTP::Propfind, host, url, headers, xml)
     end
 
-    def report( url="/", headers = {}, xml)
-      http_fetch(Net::HTTP::Report, @caldav_server, @prefix_url+url, headers, xml)
+    def report(host, url, headers = {}, xml)
+      http_fetch(Net::HTTP::Report, host, url, headers, xml)
     end
 
-    def report_without_xml_parsing(url="/", headers = {}, xml)
-      http_fetch(Net::HTTP::Report, @caldav_server, @prefix_url+url, headers, xml, false)
+    def report_without_xml_parsing(host, url, headers = {}, xml)
+      http_fetch(Net::HTTP::Report, host, url, headers, xml, false)
     end
 
-    def put( url="/", headers = {}, xml)
-      http_fetch(Net::HTTP::Put,@caldav_server, @prefix_url+url, headers, xml)
+    def put(host, url, headers = {}, xml)
+      http_fetch(Net::HTTP::Put, host, url, headers, xml)
     end
 
-    def delete( url="/", headers = {}, xml)
-      http_fetch(Net::HTTP::Delete,@caldav_server, @prefix_url+url, headers, xml)
+    def delete(host, url, headers = {}, xml)
+      http_fetch(Net::HTTP::Delete, host, url, headers, xml)
     end
 
     def fetch_calendar_data(url, start_date=nil, end_date=nil)
@@ -91,19 +98,70 @@ END
         </d:prop>
         <c:filter>
           <c:comp-filter name="VCALENDAR">
-
               #{filter_xml}
-
           </c:comp-filter>
         </c:filter>
       </c:calendar-query>
 END
 
+      xml = self.report(self.caldav_server, url, { "Depth" => 1 }, xml_request)
 
-      xml = self.report(url, { "Depth" => 1 }, xml_request)
-      xml.xpath("//cal:calendar-data").map do |calendar_data|
-        calendar_data.to_s
-      end.compact.join
+      if is_icloud
+        hrefs = xml.css("response").map do |resp|
+          resp.css("href").first.text
+        end.select(&:present?)
+      else
+        begin
+          hrefs = xml.xpath("//d:response").map do |resp|
+            resp.xpath("d:href").first.text
+          end.select(&:present?)
+        rescue Nokogiri::XML::XPath::SyntaxError
+          return []
+        end
+      end
+
+      xml_request_2  = <<END
+        <c:calendar-multiget xmlns:d="DAV:"
+        xmlns:c="urn:ietf:params:xml:ns:caldav">
+          <d:prop>
+            <c:calendar-data />
+          </d:prop>
+          <c:filter>
+            <c:comp-filter name="VCALENDAR" />
+          </c:filter>
+          #{hrefs.map{|h| '<d:href>' << h << '</d:href>'}.join}
+        </c:calendar-multiget>
+END
+      xml_2 = self.report(self.caldav_server, url, { "Depth" => 1 }, xml_request_2)
+
+      if is_icloud
+        responses = xml_2.css("response")
+      else
+        begin
+          responses = xml_2.xpath("//d:response")
+        rescue Nokogiri::XML::XPath::SyntaxError
+          return []
+        end
+      end
+
+      responses.map do |response|
+        if is_icloud
+          url = response.css("href").text
+          event_data = response.css("prop *").text
+        else
+          url = response.xpath("d:href").text
+          event_data = response.xpath("d:propstat/d:prop/*").text
+        end
+
+        if url && event_data
+          {
+              url: url,
+              event_data: event_data
+          }
+        else
+          nil
+        end
+      end.compact
     end
 
   private
@@ -147,7 +205,11 @@ END
       if req_type == Net::HTTP::Put || req_type == Net::HTTP::Delete
         res.code
       else
-        Nokogiri::XML(res.body)
+        if xml_process
+          Nokogiri::XML(res.body)
+        else
+          res.body
+        end
       end
     end
 
@@ -159,66 +221,78 @@ END
   </d:prop>
 </d:propfind>
 END
-      xml = self.propfind( "/", { "Depth" => 1 }, request)
+      xml = self.propfind(self.caldav_server, "/", { "Depth" => 1 }, request)
       #modification with http://www.nokogiri.org/tutorials/searching_a_xml_html_document.html  and http://sabre.io/dav/building-a-caldav-client/
-      xml.xpath("//d:current-user-principal //d:href /text()").first.text    #check why I need first
+      if is_icloud
+        result = xml.css("current-user-principal href").text
+      else
+        result = xml.xpath("//d:current-user-principal/d:href").first.text    #check why I need first
+      end
 
+      raise "No principal found" unless result.present?
+      result
     end
 
-    # returns an array of Calendar objects
+
     def fetch_calendars
-      # this is supposed to propfind "calendar-home-set" but icloud doesn't
-      # seem to support that, so we skip that lookup and hard-code to
-      # "/[principal user id]/calendars/" which is what calendar-home-set would
-      # probably return anyway
       request = <<END
 <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
   <d:prop>
-     <c:calendar-home-set />
+    <c:calendar-home-set/>
   </d:prop>
 </d:propfind>
 END
-      responses = self.propfind( principal, { "Depth" => 1 }, request)
-      home_sets = responses.xpath("//cal:calendar-home-set //d:href /text()").map(&:text)
+      responses = self.propfind(self.caldav_server, principal, { "Depth" => 1 }, request)
+
+      if is_icloud
+        home_sets = responses.css("prop href").map(&:text)
+      else
+        home_sets = responses.xpath("//cal:calendar-home-set/d:href").map(&:text)
+      end
+
 
       request = <<END
-      <d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/" xmlns:c="urn:ietf:params:xml:ns:caldav">
-      <d:prop>
-      <d:resourcetype />
-     <d:displayname />
-                      <cs:getctag />
-     <c:supported-calendar-component-set />
-                                  </d:prop>
+<d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:prop>
+    <d:resourcetype/>
+    <d:displayname/>
+    <cs:getctag/>
+    <c:supported-calendar-component-set/>
+  </d:prop>
 </d:propfind>
 END
       calendars_array = []
       home_sets.each  do |hs|
-        responses = self.propfind( hs, { "Depth" => 1 }, request)
-        responses.xpath("//cal:supported-calendar-component-set //cal:comp[@name='VEVENT']").each do |c|
-          r = c.xpath('./ancestor::d:response[1]')
-          name = r.xpath(".//d:displayname /text()").text
-          p name
-          path = r.xpath(".//d:href /text()").text
-          p path
-          calendars_array << Caldav::Calendar.new(self, path, name)
+
+        responses = self.propfind(self.caldav_server, hs, { "Depth" => 1 }, request)
+
+        if is_icloud
+          responses.css("multistatus response").each do |cal|
+            if cal
+              path = cal.css("href").first.try(:text)
+              begin
+                if cal.css("propstat prop displayname").length > 0
+                  name = cal.css("propstat prop displayname").first.text
+                  if name.present? && path.present?
+                    calendars_array << Caldav::Calendar.new(self, path, name)
+                  end
+                end
+              rescue NoMethodError
+              end
+            end
+          end
+        else
+          responses.xpath("//cal:supported-calendar-component-set //cal:comp[@name='VEVENT']").each do |c|
+            r = c.xpath('./ancestor::d:response[1]')
+            name = r.xpath(".//d:displayname /text()").text
+            path = r.xpath(".//d:href /text()").text
+            calendars_array << Caldav::Calendar.new(self, path, name)
+          end
         end
+
       end
 
-      calendars_array
-
-
-    #   responses.css("D|multistatus D|response").map do |response|
-    #     if response
-    #       path = response.css("D|href").first.try(:text)
-    #       if path =~/\.EML\z/
-    #         nil
-    #       else
-    #         Caldav::Calendar.new(self, path, path.split("/").last)
-    #       end
-    #     else
-    #       nil
-    #     end
-    #   end.compact
+      calendars_array.uniq(&:path)
      end
 
 

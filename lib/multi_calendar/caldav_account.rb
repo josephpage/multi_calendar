@@ -1,4 +1,5 @@
 require "multi_calendar/caldav"
+require 'tzinfo'
 
 module MultiCalendar
   class CaldavAccount
@@ -34,23 +35,35 @@ module MultiCalendar
     end
 
     def list_events params
-
       cals = caldav_client.calendars.select{|c| c.name && c.path}
       cals.select!{|cal| params[:calendar_ids].find_index cal.path}
-
 
       events = []
       cals.each do |cal|
         cal_events = cal.events({start_date: params[:start_date], end_date: params[:end_date]})
-        cal_events.map!{ |ev|
-          if ev.recurs?
-            ev.occurrences({starting: params[:start_date], before: params[:end_date]})
+        cal_events = cal_events.map { |event_hash|
+          if event_hash[:event].recurs?
+            event_hash[:event].occurrences({starting: params[:start_date], before: params[:end_date]}).map{|ev|
+              {
+                  url: event_hash[:url],
+                  event: ev,
+                  occurrence: true
+              }
+            }
           else
-            ev
+            event_hash
           end
-        }.flatten!
-        cal_events.each do |ev|
-          events << build_event_hash_from_response(ev, cal.path)
+        }.flatten.group_by{|event_hash|
+          event_hash[:event].recurrence_id || event_hash[:url]
+        }.map{|k, event_hashes|
+          if event_hashes.length == 1
+            event_hashes[0]
+          else
+            event_hashes.sort_by{|event_hash| (event_hash[:occurrence])?1:0}.first
+          end
+        }
+        cal_events.each do |event_hash|
+          events << build_event_hash_from_response(event_hash[:event], event_hash[:url], cal.path)
         end
       end
 
@@ -61,10 +74,12 @@ module MultiCalendar
       cals = caldav_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
-      events = cal.events
-      events = events.select{|ev| ev.uid == params[:event_id]}
-      if events.length > 0
-        build_event_hash_from_response(events[0], cal.path)
+
+      events = cal.get_event(params[:event_url])
+      if events && events.length > 0
+        events.map{|event|
+          build_event_hash_from_response(event[:event], event[:url], cal.path)
+        }.first
       else
         raise MultiCalendar::EventNotFoundException
       end
@@ -88,7 +103,7 @@ module MultiCalendar
       cals = caldav_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
       cal = cals.first
-      cal.delete_event params[:event_id]
+      cal.delete_event params[:event_url]
     end
 
 
@@ -111,29 +126,34 @@ module MultiCalendar
       @client ||= Caldav::Client.new(username, password, @server, @development)
     end
 
-    def event_data_from_params params
-
-      params[:start_date] = params[:start_date].to_time.utc.to_datetime
-      params[:end_date] = params[:end_date].to_time.utc.to_datetime
-      start_param = params[:start_date].strftime("%Y%m%dT%H%M%SZ")
-      end_param = params[:end_date].strftime("%Y%m%dT%H%M%SZ")
+    def   event_data_from_params params
       if params[:all_day]
         start_param = params[:start_date].strftime("%Y%m%d")
-        end_param = params[:end_date].strftime("%Y%m%d")
+        end_param   = params[:end_date].strftime("%Y%m%d")
+        start_timezone = nil
+        end_timezone = nil
+      else
+        start_param = params[:start_date].strftime("%Y%m%dT%H%M%S")
+        end_param   = params[:end_date].strftime("%Y%m%dT%H%M%S")
+        start_timezone = params[:start_timezone]
+        end_timezone = params[:end_timezone]
       end
 
       {
           event_id: params[:event_id],
+          event_url: params[:event_url],
           summary: "#{params[:summary]}",
           start: start_param,
           end: end_param,
+          start_timezone: start_timezone,
+          end_timezone: end_timezone,
           attendees: (params[:attendees] || []).map{|att| att[:email]},
           description: "#{params[:description]}",
           location: "#{params[:location]}"
       }
     end
 
-    def build_event_hash_from_response ev, calPath
+    def build_event_hash_from_response ev, event_url, calPath
       attendees = ev.attendee_property.map{|att|
         {
             displayName: "#{att.params['NAME']}".gsub("\\\"", "\""),
@@ -165,7 +185,7 @@ module MultiCalendar
           'location' => "#{ev.location}".gsub("\\\"", "\""),
           'description' => "#{ev.description}".gsub("\\\"", "\""),
           'attendees' => attendees,
-          'htmlLink' => "#{ev.uid}",
+          'htmlLink' => "#{event_url}",
           'calId' => calPath,
           'private' => false,
           'owned' => true

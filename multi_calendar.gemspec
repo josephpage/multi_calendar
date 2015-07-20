@@ -12,14 +12,11 @@ Gem::Specification.new do |s|
                    "lib/multi_calendar/office_account.rb",
                    "lib/multi_calendar/exchange_account.rb",
                    "lib/multi_calendar/caldav_account.rb",
-                   "lib/multi_calendar/iclouddav.rb",
-                   "lib/multi_calendar/iclouddav/calendar.rb",
-                   "lib/multi_calendar/iclouddav/client.rb",
-                   "lib/multi_calendar/iclouddav/contact.rb",
-                   "lib/multi_calendar/iclouddav/monkey.rb",
+
                    "lib/multi_calendar/caldav.rb",
                    "lib/multi_calendar/caldav/client.rb",
-                   "lib/multi_calendar/caldav/calendar.rb"
+                   "lib/multi_calendar/caldav/calendar.rb",
+                   "lib/multi_calendar/caldav/monkey.rb",
   ]
   s.license     = 'MIT'
   s.homepage    = 'https://github.com/NicolasMarlier/multi_calendar'

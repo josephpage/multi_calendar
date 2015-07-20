@@ -1,4 +1,4 @@
-require "multi_calendar/iclouddav"
+require "multi_calendar/caldav"
 
 module MultiCalendar
   class IcloudAccount
@@ -133,20 +133,6 @@ module MultiCalendar
       end
     end
 
-    #def get_event_old params
-    #  cals = icloud_client.calendars.select{|c| c.name && c.path}
-    #  cals = cals.select{|c| c.path == params[:calendar_id]}
-    #  cal = cals.first
-    #  events = cal.events
-    #  events = events.select{|event_hash| event_hash[:event].uid == params[:event_id]}
-    #
-    #  if events.length > 0
-    #    build_event_hash_from_response(events[0][:event], events[0][:url], cal.path)
-    #  else
-    #    raise MultiCalendar::EventNotFoundException
-    #  end
-    #end
-
     def create_event params
       cals = icloud_client.calendars.select{|c| c.name && c.path}
       cals = cals.select{|c| c.path == params[:calendar_id]}
@@ -184,7 +170,7 @@ module MultiCalendar
     private
 
     def icloud_client
-      @client ||= ICloud::Client.new(username, password, development)
+      @client ||= Caldav::Client.new(username, password, "p01-caldav.icloud.com", development, true)
     end
 
     def event_data_from_params params
