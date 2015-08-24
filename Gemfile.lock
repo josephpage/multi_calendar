@@ -9,6 +9,14 @@ GIT
       nokogiri
       rubyntlm
 
+GIT
+  remote: https://github.com/NicolasMarlier/active-sync
+  revision: af6ae3aa41a422ebcf73c99f74149c483c116ebe
+  branch: master
+  specs:
+    active-sync (0.1.0)
+      httpclient
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -182,6 +190,7 @@ PLATFORMS
 
 DEPENDENCIES
   actionview
+  active-sync!
   gem-release
   google-api-client
   mocha (>= 0.9)

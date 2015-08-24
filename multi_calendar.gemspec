@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'vcard', '~> 0.2.12'
   s.add_dependency 'actionview'
   s.add_dependency 'nokogiri'
+  s.add_dependency 'active-sync'
   #s.add_dependency 'viewpoint_nico'
 
   # development dependencies
