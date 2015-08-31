@@ -7,7 +7,7 @@ module MultiCalendar
     include ERB::Util
     include Viewpoint::EWS
 
-    attr_reader :username, :password, :ews_url, :client, :server_version, :debug, :ssl_version, :users_to_look_into
+    attr_reader :username, :password, :ews_url, :client, :server_version, :debug, :ssl_version, :users_to_look_into, :main_email
 
     def initialize params
       #params[:ews_url] ||= "https://outlook.office365.com/EWS/Exchange.asmx"
@@ -17,6 +17,8 @@ module MultiCalendar
       @username = params[:username]
       @password = params[:password]
       @ews_url = params[:ews_url]
+
+      @main_email = params[:main_email] || @username
 
       @server_version = params[:server_version]
       @ssl_version = params[:ssl_version]
@@ -107,7 +109,7 @@ module MultiCalendar
 
       calendar_folder = client.get_folder(params[:calendar_id])
       req = format_event_data(params, "create")
-      p req
+      
       calendar_item = calendar_folder.create_item(req, {
           :send_meeting_invitations => "SendToAllAndSaveCopy"
       })
@@ -174,16 +176,17 @@ module MultiCalendar
           :body => params[:description],
           :start => start_date,
           :end => end_date,
-          :is_all_day_event => (params[:all_day])?"true":"false",
+          :is_all_day_event => (params[:all_day])?("true"):("false"),
           :location => params[:location]
       }
-      attendees = params[:attendees] || []
-      #unless attendees.map{|att| att[:email]}.include? self.username
-      #  attendees << {
-      #      email: self.username
-      #  }
-      #end
 
+      attendees = params[:attendees] || []
+      unless attendees.map{|att| att[:email]}.include? self.main_email
+        attendees << {
+            email: self.main_email
+        }
+      end
+      
       result[:required_attendees] = attendees.map { |att|
         {
             attendee: {
@@ -193,6 +196,8 @@ module MultiCalendar
             }
         }
       }
+      
+
       result
     end
 
