@@ -7,7 +7,7 @@ module MultiCalendar
     include ERB::Util
     include Viewpoint::EWS
 
-    attr_reader :username, :password, :ews_url, :client, :server_version, :debug, :ssl_version
+    attr_reader :username, :password, :ews_url, :client, :server_version, :debug, :ssl_version, :users_to_look_into
 
     def initialize params
       #params[:ews_url] ||= "https://outlook.office365.com/EWS/Exchange.asmx"
@@ -21,6 +21,8 @@ module MultiCalendar
       @server_version = params[:server_version]
       @ssl_version = params[:ssl_version]
       @debug = params[:debug]
+
+      @users_to_look_into = params[:users_to_look_into]
     end
 
     def list_calendars
@@ -40,6 +42,24 @@ module MultiCalendar
             summary: calendar_folder.name,
             colorId: color_id
         }
+      end
+
+      @users_to_look_into.each do |user_to_look_into|
+        p "*" * 50
+        p user_to_look_into
+        user_all_folders = client.folders root: :root, traversal: :deep, act_as: user_to_look_into
+        user_calendar_folders = user_all_folders.select do |f|
+          f.class == Viewpoint::EWS::Types::CalendarFolder
+        end
+        user_calendar_folders.each do |calendar_folder|
+          color_id += 1
+
+          result << {
+              id: calendar_folder.id,
+              summary: "#{user_to_look_into}/#{calendar_folder.name}",
+              colorId: color_id
+          }
+        end
       end
 
       result
