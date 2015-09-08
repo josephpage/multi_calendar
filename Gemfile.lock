@@ -11,7 +11,7 @@ GIT
 
 GIT
   remote: https://github.com/NicolasMarlier/active-sync
-  revision: af6ae3aa41a422ebcf73c99f74149c483c116ebe
+  revision: aaa325393eaee3ecbab21214509aa1b85695d19a
   branch: master
   specs:
     active-sync (0.1.0)
