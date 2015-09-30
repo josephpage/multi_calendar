@@ -170,7 +170,9 @@ module MultiCalendar
     private
 
     def icloud_client
-      @client ||= Caldav::Client.new(username, password, "p01-caldav.icloud.com", development, true)
+      #@client ||= Caldav::Client.new(username, password, "p01-caldav.icloud.com", development, true)
+      # Fallback
+      @client ||= Caldav::Client.new(username, password, "p02-caldav.icloud.com", development, true)
     end
 
     def event_data_from_params params
