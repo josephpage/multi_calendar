@@ -48,13 +48,24 @@ module MultiCalendar
       end
 
       @users_to_look_into.each do |user_to_look_into|
-        p "*" * 50
-        p user_to_look_into
-        user_all_folders = client.folders root: :root, traversal: :deep, act_as: user_to_look_into
-        user_calendar_folders = user_all_folders.select do |f|
-          f.class == Viewpoint::EWS::Types::CalendarFolder
-        end
-        user_calendar_folders.each do |calendar_folder|
+        #p "*" * 50
+        #p user_to_look_into
+        #user_all_folders = client.folders root: :root, traversal: :deep, act_as: user_to_look_into
+        #user_calendar_folders = user_all_folders.select do |f|
+        #  f.class == Viewpoint::EWS::Types::CalendarFolder
+        #end
+        #user_calendar_folders.each do |calendar_folder|
+        #  color_id += 1
+        #
+        #  result << {
+        #      id: calendar_folder.id,
+        #      summary: "#{user_to_look_into}/#{calendar_folder.name}",
+        #      colorId: color_id
+        #  }
+        #end
+
+        begin
+          calendar_folder = client.get_folder({id: :calendar}, folder_shape: {:base_shape => 'Default'}, act_as: user_to_look_into)
           color_id += 1
 
           result << {
@@ -62,7 +73,11 @@ module MultiCalendar
               summary: "#{user_to_look_into}/#{calendar_folder.name}",
               colorId: color_id
           }
+        rescue
+
         end
+
+
       end
 
       result
